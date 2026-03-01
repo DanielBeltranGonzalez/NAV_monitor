@@ -95,6 +95,35 @@ docker exec -it nav-monitor npx prisma studio
 
 ---
 
+## Copias de seguridad
+
+### Backup manual desde el panel de administración
+
+Los administradores pueden descargar una copia de la base de datos en cualquier momento desde **Admin → Backups**. El fichero descargado contiene todos los datos (usuarios, bancos, inversiones y valores históricos) y puede usarse para restaurar la base de datos.
+
+### Backup automático (Docker)
+
+En entornos Docker, el contenedor ejecuta automáticamente una copia de seguridad cada noche a las **02:00**. Los backups se guardan en `/data/backups/` dentro del volumen persistente.
+
+El número de días de retención es configurable mediante la variable de entorno `BACKUP_KEEP_DAYS` (por defecto: 7 días).
+
+### Restaurar un backup
+
+Para restaurar un backup en un contenedor Docker en ejecución:
+
+1. Detener la aplicación (o poner el stack en pausa desde Portainer).
+2. Copiar el fichero `.db` al volumen, reemplazando la base de datos actual:
+
+   ```bash
+   docker cp nav_backup_FECHA.db nav-monitor:/data/nav.db
+   ```
+
+3. Reiniciar el contenedor.
+
+> **Importante:** la restauración sobreescribe todos los datos actuales. Descarga un backup reciente antes de restaurar.
+
+---
+
 ## Variables de entorno
 
 | Variable | Descripción | Por defecto |
@@ -102,6 +131,7 @@ docker exec -it nav-monitor npx prisma studio
 | `JWT_SECRET` | Secreto para firmar los tokens de sesión. **Obligatorio cambiarlo.** | `dev-secret-change-in-production` |
 | `HOST_PORT` | Puerto del host donde se expone la aplicación | `3000` |
 | `DATABASE_URL` | Ruta a la base de datos SQLite | `file:/data/nav.db` |
+| `BACKUP_KEEP_DAYS` | Días de retención de backups automáticos | `7` |
 
 ---
 

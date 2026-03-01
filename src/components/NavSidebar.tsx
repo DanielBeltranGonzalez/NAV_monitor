@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle } from "lucide-react"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle, DatabaseBackup } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -62,13 +62,25 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
             href="/admin/users"
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-              pathname.startsWith('/admin')
+              pathname === '/admin/users'
                 ? "bg-emerald-600 text-white"
                 : "text-slate-300 hover:bg-slate-800 hover:text-white"
             )}
           >
             <Users className="h-4 w-4" />
             Usuarios
+          </Link>
+          <Link
+            href="/admin/backup"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              pathname === '/admin/backup'
+                ? "bg-emerald-600 text-white"
+                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            )}
+          >
+            <DatabaseBackup className="h-4 w-4" />
+            Backups
           </Link>
         </div>
       )}
@@ -115,7 +127,7 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           Cerrar sesión
         </button>
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v0.16.0</p>
+          <p>v0.17.0</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>
