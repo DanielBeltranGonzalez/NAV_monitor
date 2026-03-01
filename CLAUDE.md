@@ -35,6 +35,15 @@ healthcheck:
   start_period: 30s
 ```
 
+## Seguridad de roles y administradores
+
+🚨 **Un administrador nunca puede quedar eliminado ni sin acceso.** Aplica esta regla en cualquier operación que afecte a usuarios:
+
+- Un administrador **no puede eliminarse a sí mismo** (ni desde su perfil ni desde el panel de administración)
+- Un administrador **no puede degradarse a sí mismo** a rol USER
+- Antes de permitir eliminar o degradar un ADMIN, verifica siempre que la operación no es sobre el propio usuario en sesión
+- Estas comprobaciones deben existir tanto en el **backend** (API route) como reflejarse en el **frontend** (botones deshabilitados con título explicativo)
+
 ## Base de datos y migraciones
 
 🚨 **Cualquier cambio en `prisma/schema.prisma` requiere una migración.** Nunca modifiques el schema sin crear y aplicar la migración correspondiente.
