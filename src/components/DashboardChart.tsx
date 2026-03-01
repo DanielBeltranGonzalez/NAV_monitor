@@ -23,8 +23,8 @@ export function DashboardChart() {
   if (data.length < 2) return null
 
   return (
-    <div className="bg-white rounded-md border mt-6 p-4">
-      <h2 className="text-sm font-semibold text-slate-600 mb-4">Evolución del portfolio</h2>
+    <div className="bg-white dark:bg-slate-900 rounded-md border dark:border-slate-700 mt-6 p-4">
+      <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-4">Evolución del portfolio</h2>
       <NavChart data={data} />
     </div>
   )

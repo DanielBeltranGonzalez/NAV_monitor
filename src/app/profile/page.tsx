@@ -77,16 +77,16 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-lg space-y-8">
-      <h1 className="text-2xl font-bold text-slate-800">Mi perfil</h1>
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Mi perfil</h1>
 
       {/* Cambio de contraseña */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-700">Cambiar contraseña</h2>
+          <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Cambiar contraseña</h2>
         </div>
         <form onSubmit={handleChangePassword} className="space-y-3">
           <div className="space-y-1">
-            <label htmlFor="currentPassword" className="text-sm font-medium text-slate-700">
+            <label htmlFor="currentPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Contraseña actual
             </label>
             <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function ProfilePage() {
                 type={showCurrent ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => { setCurrentPassword(e.target.value); setPwError(""); setPwSuccess(false) }}
-                className="flex h-10 w-full rounded-md border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-emerald-500 disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border-2 border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:border-emerald-500 dark:focus-visible:border-emerald-400 disabled:opacity-50"
                 required
               />
               <button type="button" onClick={() => setShowCurrent(v => !v)} className="text-slate-400 hover:text-slate-600 shrink-0" tabIndex={-1}>
@@ -104,7 +104,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="space-y-1">
-            <label htmlFor="newPassword" className="text-sm font-medium text-slate-700">
+            <label htmlFor="newPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Nueva contraseña
             </label>
             <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export default function ProfilePage() {
                 type={showNew ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => { setNewPassword(e.target.value); setPwError(""); setPwSuccess(false) }}
-                className="flex h-10 w-full rounded-md border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-emerald-500 disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border-2 border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:border-emerald-500 dark:focus-visible:border-emerald-400 disabled:opacity-50"
                 minLength={8}
                 required
               />
@@ -136,17 +136,17 @@ export default function ProfilePage() {
       </div>
 
       {/* Eliminar cuenta */}
-      <div className="bg-white rounded-lg border border-red-200 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-red-200 dark:border-red-900 p-6 space-y-4">
         <div>
-          <h2 className="text-base font-semibold text-red-700">Eliminar cuenta</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <h2 className="text-base font-semibold text-red-700 dark:text-red-400">Eliminar cuenta</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Esta acción es irreversible. Se eliminarán tu cuenta y todos tus datos:
             bancos, inversiones y valores históricos.
           </p>
         </div>
         <form onSubmit={handleDelete} className="space-y-3">
           <div className="space-y-1">
-            <label htmlFor="confirm" className="text-sm font-medium text-slate-700">
+            <label htmlFor="confirm" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Escribe tu email para confirmar
             </label>
             <input
@@ -154,7 +154,7 @@ export default function ProfilePage() {
               type="email"
               value={confirm}
               onChange={(e) => { setConfirm(e.target.value); setDeleteError("") }}
-              className="flex h-10 w-full rounded-md border-2 border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:outline-none focus-visible:border-red-500 disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border-2 border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:border-red-500 disabled:opacity-50"
               placeholder={userEmail || "tu@email.com"}
               required
             />

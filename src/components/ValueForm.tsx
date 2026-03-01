@@ -104,7 +104,7 @@ export function ValueForm({ investments }: ValueFormProps) {
           <col className="w-48" />
         </colgroup>
         <thead>
-          <tr className="border-b bg-slate-50 text-muted-foreground">
+          <tr className="border-b bg-slate-50 dark:bg-slate-800 text-muted-foreground">
             <th className="px-4 py-3 text-left font-medium">Inversión</th>
             <th className="px-4 py-3 text-right font-medium">Último valor</th>
             <th className="px-4 py-3 text-right font-medium">Última fecha</th>
@@ -114,13 +114,13 @@ export function ValueForm({ investments }: ValueFormProps) {
         <tbody>
           {Object.entries(groups).map(([bank, rows]) => (
             <Fragment key={bank}>
-              <tr className="bg-slate-100 border-b border-slate-200">
+              <tr className="bg-slate-100 dark:bg-slate-700/60 border-b border-slate-200 dark:border-slate-600">
                 <td colSpan={4} className="px-4 py-1 text-xs text-muted-foreground font-medium">
                   {bank}
                 </td>
               </tr>
               {rows.map((inv) => (
-                <tr key={inv.id} className="border-b hover:bg-slate-50 transition-colors">
+                <tr key={inv.id} className="border-b hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                   <td className={`px-4 py-2 font-medium transition-colors ${focused === inv.id ? 'text-blue-600' : ''}`}>{inv.name}</td>
                   <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
                     {inv.lastValue ? formatEUR(parseFloat(inv.lastValue.value)) : '—'}
@@ -170,7 +170,7 @@ export function ValueForm({ investments }: ValueFormProps) {
       </div>
 
       {/* Active table */}
-      <div className="rounded-md border bg-white overflow-x-auto mb-4">
+      <div className="rounded-md border bg-white dark:bg-slate-900 overflow-x-auto mb-4">
         {renderTable(active)}
       </div>
 
@@ -178,7 +178,7 @@ export function ValueForm({ investments }: ValueFormProps) {
       {inactive.length > 0 && (
         <div className="mb-4">
           <h2 className="text-sm font-semibold text-muted-foreground px-1 pb-2">NAV = 0</h2>
-          <div className="rounded-md border bg-white overflow-x-auto opacity-60">
+          <div className="rounded-md border bg-white dark:bg-slate-900 overflow-x-auto opacity-60">
             {renderTable(inactive)}
           </div>
         </div>

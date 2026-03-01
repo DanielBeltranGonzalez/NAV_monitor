@@ -84,24 +84,24 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">Gestión de usuarios</h1>
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">Gestión de usuarios</h1>
 
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Email</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Rol</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Registro</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Última conexión</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Contraseña temporal</th>
-              <th className="text-right px-4 py-3 font-semibold text-slate-600">Acciones</th>
+            <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Email</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Rol</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Registro</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Última conexión</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Contraseña temporal</th>
+              <th className="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {users.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-800">{u.email}</td>
+              <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+                <td className="px-4 py-3 text-slate-800 dark:text-slate-100">{u.email}</td>
                 <td className="px-4 py-3">
                   {u.role === "ADMIN" ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
@@ -113,10 +113,10 @@ export default function AdminUsersPage() {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {formatDate(new Date(u.createdAt))}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                   {u.lastLoginAt ? formatDate(new Date(u.lastLoginAt)) : <span className="text-slate-400">—</span>}
                 </td>
                 <td className="px-4 py-3">

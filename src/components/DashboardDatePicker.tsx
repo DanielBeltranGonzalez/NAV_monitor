@@ -20,7 +20,7 @@ export function DashboardDatePicker({ value, max }: DashboardDatePickerProps) {
           router.push(`/dashboard?date=${e.target.value}`)
         }
       }}
-      className="border border-input rounded-md px-3 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      className="border border-input rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-800 dark:text-slate-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
     />
   )
 }

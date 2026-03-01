@@ -90,7 +90,7 @@ export function ValueTable({
   }
 
   return (
-    <div className="rounded-md border bg-white">
+    <div className="rounded-md border bg-white dark:bg-slate-900">
       {error && <p className="px-4 pt-3 text-sm text-destructive">{error}</p>}
       <Table>
         <TableHeader>

@@ -46,7 +46,7 @@ export default function AdminEventsPage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Registro de eventos</h1>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Registro de eventos</h1>
         {(() => {
           const unread = events.filter(e => lastRead === null || new Date(e.createdAt) > lastRead).length
           return unread > 0 ? (
@@ -57,27 +57,27 @@ export default function AdminEventsPage() {
         })()}
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Fecha</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Evento</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Usuario</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Afectado</th>
+            <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Fecha</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Evento</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Usuario</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Afectado</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {events.map((e) => {
               const isNew = lastRead === null || new Date(e.createdAt) > lastRead
               return (
-                <tr key={e.id} className={isNew ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-slate-50"}>
+                <tr key={e.id} className={isNew ? "bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30" : "hover:bg-slate-50 dark:hover:bg-slate-800"}>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       {isNew && (
                         <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0" title="Sin leer" />
                       )}
-                      <span className={isNew ? "text-slate-800 font-medium" : "text-slate-500"}>
+                      <span className={isNew ? "text-slate-800 dark:text-slate-100 font-medium" : "text-slate-500 dark:text-slate-400"}>
                         {new Date(e.createdAt).toLocaleString("es-ES", {
                           day: "2-digit", month: "2-digit", year: "numeric",
                           hour: "2-digit", minute: "2-digit",
@@ -90,8 +90,8 @@ export default function AdminEventsPage() {
                       {EVENT_LABELS[e.event] ?? e.event}
                     </span>
                   </td>
-                  <td className={`px-4 py-3 ${isNew ? "text-slate-900 font-medium" : "text-slate-700"}`}>{e.userEmail}</td>
-                  <td className="px-4 py-3 text-slate-500">{e.targetEmail ?? "—"}</td>
+                  <td className={`px-4 py-3 ${isNew ? "text-slate-900 dark:text-slate-100 font-medium" : "text-slate-700 dark:text-slate-300"}`}>{e.userEmail}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{e.targetEmail ?? "—"}</td>
                 </tr>
               )
             })}

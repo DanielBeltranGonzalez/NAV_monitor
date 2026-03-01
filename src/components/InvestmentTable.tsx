@@ -117,7 +117,7 @@ export function InvestmentTable({
     const groups = toGroups(list)
     return Object.entries(groups).flatMap(([bankName, rows]) => {
       const bankRow = (
-        <TableRow key={`bank-${bankName}`} className="bg-slate-100 border-b border-slate-200 hover:bg-slate-100">
+        <TableRow key={`bank-${bankName}`} className="bg-slate-100 dark:bg-slate-700/60 border-b border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/60">
           <TableCell colSpan={4} className="py-1 text-xs text-muted-foreground font-medium">
             {bankName}
           </TableCell>
@@ -252,7 +252,7 @@ export function InvestmentTable({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-md border bg-white">
+      <div className="rounded-md border bg-white dark:bg-slate-900">
         <Table className="table-fixed w-full">
           {colGroup}
           {tableHeader}
@@ -265,7 +265,7 @@ export function InvestmentTable({
           <h2 className="text-sm font-semibold text-muted-foreground px-4 pb-2">
             NAV = 0
           </h2>
-          <div className="rounded-md border bg-white opacity-60">
+          <div className="rounded-md border bg-white dark:bg-slate-900 opacity-60">
             <Table className="table-fixed w-full">
               {colGroup}
               {tableHeader}
