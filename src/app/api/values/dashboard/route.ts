@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getSessionUser } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const user = await getSessionUser(request as any)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const investments = await prisma.investment.findMany({
+    where: { userId: user.id },
     orderBy: { name: 'asc' },
     include: {
       bank: true,

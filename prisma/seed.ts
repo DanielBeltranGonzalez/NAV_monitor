@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcryptjs from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -18,12 +19,21 @@ async function main() {
   await prisma.investmentValue.deleteMany()
   await prisma.investment.deleteMany()
   await prisma.bank.deleteMany()
+  await prisma.user.deleteMany()
+
+  // ── Usuario de prueba ─────────────────────────────────────────────────────
+  const user = await prisma.user.create({
+    data: {
+      email: 'test@test.com',
+      passwordHash: await bcryptjs.hash('password123', 12),
+    },
+  })
 
   // ── Bancos ────────────────────────────────────────────────────────────────
   const [bbva, santander, myinvestor] = await Promise.all([
-    prisma.bank.create({ data: { name: 'BBVA' } }),
-    prisma.bank.create({ data: { name: 'Santander' } }),
-    prisma.bank.create({ data: { name: 'MyInvestor' } }),
+    prisma.bank.create({ data: { name: 'BBVA', userId: user.id } }),
+    prisma.bank.create({ data: { name: 'Santander', userId: user.id } }),
+    prisma.bank.create({ data: { name: 'MyInvestor', userId: user.id } }),
   ])
 
   // ── Inversiones + valores ─────────────────────────────────────────────────
@@ -66,7 +76,7 @@ async function main() {
 
   for (const inv of investments) {
     const created = await prisma.investment.create({
-      data: { name: inv.name, bankId: inv.bankId },
+      data: { name: inv.name, bankId: inv.bankId, userId: user.id },
     })
 
     await prisma.investmentValue.createMany({
@@ -79,6 +89,7 @@ async function main() {
   }
 
   console.log('✅ Seed completado:')
+  console.log(`   1 usuario (test@test.com / password123)`)
   console.log(`   3 bancos | ${investments.length} inversiones | ${investments.length * 4} valores`)
 }
 

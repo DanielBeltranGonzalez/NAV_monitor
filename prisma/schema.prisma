@@ -7,17 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           Int          @id @default(autoincrement())
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  banks        Bank[]
+  investments  Investment[]
+}
+
 model Bank {
   id          Int          @id @default(autoincrement())
-  name        String       @unique
+  name        String
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
   investments Investment[]
+
+  @@unique([name, userId])
 }
 
 model Investment {
   id        Int               @id @default(autoincrement())
   name      String
   bankId    Int
+  userId    Int
   bank      Bank              @relation(fields: [bankId], references: [id])
+  user      User              @relation(fields: [userId], references: [id])
   createdAt DateTime          @default(now())
   values    InvestmentValue[]
 }

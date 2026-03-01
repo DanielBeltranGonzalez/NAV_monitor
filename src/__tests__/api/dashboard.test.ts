@@ -21,6 +21,10 @@ jest.mock('@/lib/prisma', () => ({
   },
 }))
 
+jest.mock('@/lib/auth', () => ({
+  getSessionUser: jest.fn().mockResolvedValue({ id: 1, email: 'test@test.com' }),
+}))
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeValue(id: number, date: string, value: string) {
@@ -43,7 +47,7 @@ describe('GET /api/values/dashboard', () => {
     ]
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([makeInvestment(values)])
 
-    const res = await GET() as any
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
     const data = await res.json()
 
     expect(data).toHaveLength(1)
@@ -58,7 +62,7 @@ describe('GET /api/values/dashboard', () => {
     const values = [makeValue(1, '2024-06-15', '1000')]
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([makeInvestment(values)])
 
-    const res = await GET() as any
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
     const data = await res.json()
 
     expect(data[0].previous).toBeNull()
@@ -74,7 +78,7 @@ describe('GET /api/values/dashboard', () => {
     }
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([invSinValores, invValorCero])
 
-    const res = await GET() as any
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
     const data = await res.json()
     expect(data).toHaveLength(0)
   })
@@ -87,7 +91,7 @@ describe('GET /api/values/dashboard', () => {
     ]
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([makeInvestment(values)])
 
-    const res = await GET() as any
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
     const data = await res.json()
 
     expect(data[0].prevMonth.id).toBe(1)
@@ -97,7 +101,7 @@ describe('GET /api/values/dashboard', () => {
   it('devuelve array vacío si no hay inversiones', async () => {
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([])
 
-    const res = await GET() as any
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
     expect(await res.json()).toEqual([])
   })
 })

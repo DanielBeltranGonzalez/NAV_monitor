@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getSessionUser } from '@/lib/auth'
 
 export async function POST(request: Request) {
+  const user = await getSessionUser(request as any)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await request.json()
   const { investmentId, date, value } = body
 
@@ -24,10 +28,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'value must be a non-negative finite number' }, { status: 400 })
   }
 
-  // Verify investment exists
+  // Verify investment exists and belongs to user
   const investment = await prisma.investment.findUnique({ where: { id: investmentId } })
   if (!investment) {
     return NextResponse.json({ error: 'Investment not found' }, { status: 404 })
+  }
+  if (investment.userId !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const existing = await prisma.investmentValue.findFirst({

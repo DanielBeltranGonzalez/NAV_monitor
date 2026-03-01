@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getSessionUser } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const user = await getSessionUser(request as any)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const investments = await prisma.investment.findMany({
+    where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
     include: {
       bank: true,
@@ -16,6 +21,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const user = await getSessionUser(request as any)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await request.json()
   const { name, bankId } = body
 
@@ -27,7 +35,7 @@ export async function POST(request: Request) {
   }
 
   const investment = await prisma.investment.create({
-    data: { name: name.trim(), bankId: Number(bankId) },
+    data: { name: name.trim(), bankId: Number(bankId), userId: user.id },
     include: { bank: true },
   })
   return NextResponse.json(investment, { status: 201 })

@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2 } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -12,8 +12,18 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
 ]
 
-export function NavSidebar() {
+interface NavSidebarProps {
+  userEmail?: string
+}
+
+export function NavSidebar({ userEmail }: NavSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    router.push("/auth/login")
+  }
 
   return (
     <aside className="w-64 min-h-screen bg-slate-900 text-slate-100 flex flex-col">
@@ -44,9 +54,21 @@ export function NavSidebar() {
           )
         })}
       </nav>
-      <div className="p-4 border-t border-slate-700 text-slate-500 text-xs space-y-0.5">
-        <p>v0.9.4</p>
-        <p>© tacombel@gmail.com</p>
+      <div className="p-4 border-t border-slate-700 space-y-2">
+        {userEmail && (
+          <p className="text-slate-400 text-xs truncate" title={userEmail}>{userEmail}</p>
+        )}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-slate-400 hover:text-white text-xs transition-colors w-full"
+        >
+          <LogOut className="h-3 w-3" />
+          Cerrar sesión
+        </button>
+        <div className="text-slate-500 text-xs space-y-0.5">
+          <p>v0.10.0</p>
+          <p>© tacombel@gmail.com</p>
+        </div>
       </div>
     </aside>
   )
