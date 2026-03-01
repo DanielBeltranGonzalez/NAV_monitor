@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText } from "lucide-react"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -72,10 +72,27 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           </Link>
         </div>
       )}
-      <div className="px-4 pb-2">
+      <div className="px-4 pb-2 space-y-1">
+        <Link
+          href="/profile"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors",
+            pathname === '/profile'
+              ? "bg-emerald-600 text-white"
+              : "text-slate-400 hover:bg-slate-800 hover:text-white"
+          )}
+        >
+          <UserCircle className="h-3 w-3" />
+          Mi perfil
+        </Link>
         <Link
           href="/legal"
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-colors",
+            pathname === '/legal'
+              ? "bg-emerald-600 text-white"
+              : "text-slate-400 hover:bg-slate-800 hover:text-white"
+          )}
         >
           <ScrollText className="h-3 w-3" />
           Aviso legal
