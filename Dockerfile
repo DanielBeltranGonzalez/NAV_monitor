@@ -44,5 +44,6 @@ COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 3000
+# APP_PORT sólo afecta al mapeo del host (docker-compose); el contenedor siempre escucha en 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
