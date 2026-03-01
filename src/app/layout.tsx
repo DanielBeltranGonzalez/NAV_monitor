@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { NavSidebar } from "@/components/NavSidebar"
+import { TopBar } from "@/components/TopBar"
 import { LegalModal } from "@/components/LegalModal"
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { cookies } from "next/headers"
@@ -47,10 +48,13 @@ export default async function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <div className="flex min-h-screen">
-            <NavSidebar userEmail={userEmail} isAdmin={isAdmin} lastLoginAt={lastLoginAt} />
-            <main className="flex-1 p-8 bg-background">
-              {children}
-            </main>
+            <NavSidebar isAdmin={isAdmin} />
+            <div className="flex-1 flex flex-col">
+              <TopBar userEmail={userEmail} lastLoginAt={lastLoginAt?.toISOString() ?? null} />
+              <main className="flex-1 p-8 bg-background">
+                {children}
+              </main>
+            </div>
             {userEmail && <LegalModal />}
           </div>
         </ThemeProvider>

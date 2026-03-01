@@ -1,10 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList } from "lucide-react"
-import { ThemeToggle } from "@/components/ThemeToggle"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import pkg from "../../package.json"
 
@@ -18,14 +17,11 @@ const navItems = [
 ]
 
 interface NavSidebarProps {
-  userEmail?: string
   isAdmin?: boolean
-  lastLoginAt?: Date | null
 }
 
-export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps) {
+export function NavSidebar({ isAdmin }: NavSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [unreadEvents, setUnreadEvents] = useState(0)
 
   useEffect(() => {
@@ -37,11 +33,6 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
       .then((data) => setUnreadEvents(data.count ?? 0))
       .catch(() => {})
   }, [isAdmin, pathname])
-
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" })
-    router.push("/auth/login")
-  }
 
   return (
     <aside className="w-64 min-h-screen bg-slate-900 text-slate-100 flex flex-col">
@@ -143,23 +134,7 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           Aviso legal
         </Link>
       </div>
-      <div className="p-4 border-t border-slate-700 space-y-2">
-        <ThemeToggle />
-        {userEmail && (
-          <p className="text-slate-400 text-xs truncate" title={userEmail}>{userEmail}</p>
-        )}
-        {lastLoginAt && (
-          <p className="text-slate-500 text-xs">
-            Última sesión: {new Date(lastLoginAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-          </p>
-        )}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-slate-400 hover:text-white text-xs transition-colors w-full"
-        >
-          <LogOut className="h-3 w-3" />
-          Cerrar sesión
-        </button>
+      <div className="p-4 border-t border-slate-700">
         <div className="text-slate-500 text-xs space-y-0.5">
           <p>v{pkg.version}</p>
           <p>© tacombel@gmail.com</p>
