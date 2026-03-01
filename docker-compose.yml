@@ -4,11 +4,17 @@ services:
     container_name: nav-monitor
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${HOST_PORT:-3000}:3000"
     environment:
       - DATABASE_URL=file:/data/nav.db
     volumes:
       - nav_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   nav_data:

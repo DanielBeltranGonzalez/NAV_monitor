@@ -1,25 +1,29 @@
-# ── Build stage ────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+# ── Stage 1: deps ──────────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
 
-# openssl requerido por Prisma
 RUN apk add --no-cache libc6-compat openssl
 
 WORKDIR /app
 
-# Instalar dependencias primero (mejor caché)
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copiar código fuente
+# ── Stage 2: builder ────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generar cliente Prisma y compilar Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN npm run build
 RUN mkdir -p public
 
-# ── Runtime stage ───────────────────────────────────────────────────────────────
+# ── Stage 3: runner ─────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
 RUN apk add --no-cache openssl
@@ -31,19 +35,21 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Copiar artefactos de build
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Usuario no-root
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nextjs
 
-# Copiar schema y migraciones de Prisma
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/public       ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next        ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/prisma       ./prisma
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
+USER nextjs
+
 EXPOSE 3000
-# APP_PORT sólo afecta al mapeo del host (docker-compose); el contenedor siempre escucha en 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

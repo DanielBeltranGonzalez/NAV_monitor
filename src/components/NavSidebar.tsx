@@ -45,7 +45,7 @@ export function NavSidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-slate-700 text-slate-500 text-xs space-y-0.5">
-        <p>v0.9.3</p>
+        <p>v0.9.4</p>
         <p>© tacombel@gmail.com</p>
       </div>
     </aside>
