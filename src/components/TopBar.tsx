@@ -20,7 +20,7 @@ export function TopBar({ userEmail, lastLoginAt }: TopBarProps) {
   if (!userEmail) return null
 
   return (
-    <header className="flex items-center justify-end gap-4 px-8 py-3 border-b bg-background dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
+    <header className="flex items-center justify-end gap-4 px-8 py-3 bg-background text-xs text-slate-500 dark:text-slate-400">
       <ThemeToggle />
       <span className="text-slate-600 dark:text-slate-300 font-medium">{userEmail}</span>
       {lastLoginAt && (
