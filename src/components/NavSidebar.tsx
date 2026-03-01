@@ -2,8 +2,11 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle, DatabaseBackup } from "lucide-react"
+import { useEffect, useState } from "react"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const EVENTS_LAST_READ_KEY = "eventsLastRead"
 
 const navItems = [
   { href: "/banks", label: "Bancos", icon: Building2 },
@@ -21,6 +24,17 @@ interface NavSidebarProps {
 export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [unreadEvents, setUnreadEvents] = useState(0)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    const since = localStorage.getItem(EVENTS_LAST_READ_KEY) ?? ''
+    const url = since ? `/api/admin/events/count?since=${encodeURIComponent(since)}` : '/api/admin/events/count'
+    fetch(url)
+      .then((r) => r.ok ? r.json() : { count: 0 })
+      .then((data) => setUnreadEvents(data.count ?? 0))
+      .catch(() => {})
+  }, [isAdmin, pathname])
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -69,6 +83,23 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           >
             <Users className="h-4 w-4" />
             Usuarios
+          </Link>
+          <Link
+            href="/admin/events"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              pathname === '/admin/events'
+                ? "bg-emerald-600 text-white"
+                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            )}
+          >
+            <ClipboardList className="h-4 w-4" />
+            Eventos
+            {unreadEvents > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
+                {unreadEvents > 99 ? "99+" : unreadEvents}
+              </span>
+            )}
           </Link>
           <Link
             href="/admin/backup"
@@ -127,7 +158,7 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           Cerrar sesión
         </button>
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v0.18.0</p>
+          <p>v0.19.0</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>
