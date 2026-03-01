@@ -26,8 +26,11 @@ const EVENTS_LAST_READ_KEY = "eventsLastRead"
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<AuditLogRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [lastRead, setLastRead] = useState<Date | null>(null)
 
   useEffect(() => {
+    const prev = localStorage.getItem(EVENTS_LAST_READ_KEY)
+    setLastRead(prev ? new Date(prev) : null)
     localStorage.setItem(EVENTS_LAST_READ_KEY, new Date().toISOString())
     fetch("/api/admin/events")
       .then((r) => r.json())
@@ -41,7 +44,17 @@ export default function AdminEventsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">Registro de eventos</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Registro de eventos</h1>
+        {(() => {
+          const unread = events.filter(e => lastRead === null || new Date(e.createdAt) > lastRead).length
+          return unread > 0 ? (
+            <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+              {unread} sin leer
+            </span>
+          ) : null
+        })()}
+      </div>
 
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
@@ -54,23 +67,33 @@ export default function AdminEventsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {events.map((e) => (
-              <tr key={e.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
-                  {new Date(e.createdAt).toLocaleString("es-ES", {
-                    day: "2-digit", month: "2-digit", year: "numeric",
-                    hour: "2-digit", minute: "2-digit",
-                  })}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${EVENT_COLORS[e.event] ?? "bg-slate-100 text-slate-600"}`}>
-                    {EVENT_LABELS[e.event] ?? e.event}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-700">{e.userEmail}</td>
-                <td className="px-4 py-3 text-slate-500">{e.targetEmail ?? "—"}</td>
-              </tr>
-            ))}
+            {events.map((e) => {
+              const isNew = lastRead === null || new Date(e.createdAt) > lastRead
+              return (
+                <tr key={e.id} className={isNew ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-slate-50"}>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      {isNew && (
+                        <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0" title="Sin leer" />
+                      )}
+                      <span className={isNew ? "text-slate-800 font-medium" : "text-slate-500"}>
+                        {new Date(e.createdAt).toLocaleString("es-ES", {
+                          day: "2-digit", month: "2-digit", year: "numeric",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${EVENT_COLORS[e.event] ?? "bg-slate-100 text-slate-600"}`}>
+                      {EVENT_LABELS[e.event] ?? e.event}
+                    </span>
+                  </td>
+                  <td className={`px-4 py-3 ${isNew ? "text-slate-900 font-medium" : "text-slate-700"}`}>{e.userEmail}</td>
+                  <td className="px-4 py-3 text-slate-500">{e.targetEmail ?? "—"}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
 
