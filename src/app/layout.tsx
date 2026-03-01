@@ -21,16 +21,18 @@ export default async function RootLayout({
   const token = cookieStore.get("session")?.value ?? null
 
   let userEmail: string | undefined
+  let isAdmin = false
   if (token) {
     const payload = await verifyToken(token)
     userEmail = payload?.email
+    isAdmin = payload?.role === 'ADMIN'
   }
 
   return (
     <html lang="es">
       <body className={inter.className} suppressHydrationWarning>
         <div className="flex min-h-screen">
-          <NavSidebar userEmail={userEmail} />
+          <NavSidebar userEmail={userEmail} isAdmin={isAdmin} />
           <main className="flex-1 p-8 bg-slate-50">
             {children}
           </main>

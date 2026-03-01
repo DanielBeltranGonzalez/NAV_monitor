@@ -26,6 +26,7 @@ async function main() {
     data: {
       email: 'test@test.com',
       passwordHash: await bcryptjs.hash('password123', 12),
+      role: 'ADMIN',
     },
   })
 

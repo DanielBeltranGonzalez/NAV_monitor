@@ -49,7 +49,7 @@ export default function LoginPage() {
         <p className="text-sm text-slate-500">Inicia sesión en tu cuenta</p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
           <div className="space-y-1">
             <Label htmlFor="email">Email</Label>
             <Input

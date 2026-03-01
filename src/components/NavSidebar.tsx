@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut } from "lucide-react"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -14,9 +14,10 @@ const navItems = [
 
 interface NavSidebarProps {
   userEmail?: string
+  isAdmin?: boolean
 }
 
-export function NavSidebar({ userEmail }: NavSidebarProps) {
+export function NavSidebar({ userEmail, isAdmin }: NavSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -54,6 +55,22 @@ export function NavSidebar({ userEmail }: NavSidebarProps) {
           )
         })}
       </nav>
+      {isAdmin && (
+        <div className="px-4 pb-2 border-t border-slate-700 pt-4">
+          <Link
+            href="/admin/users"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              pathname.startsWith('/admin')
+                ? "bg-emerald-600 text-white"
+                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            )}
+          >
+            <Users className="h-4 w-4" />
+            Usuarios
+          </Link>
+        </div>
+      )}
       <div className="p-4 border-t border-slate-700 space-y-2">
         {userEmail && (
           <p className="text-slate-400 text-xs truncate" title={userEmail}>{userEmail}</p>
@@ -66,7 +83,7 @@ export function NavSidebar({ userEmail }: NavSidebarProps) {
           Cerrar sesión
         </button>
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v0.10.0</p>
+          <p>v0.11.0</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>

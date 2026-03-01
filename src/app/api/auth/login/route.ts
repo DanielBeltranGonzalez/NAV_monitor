@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 })
   }
 
-  const token = await signToken({ sub: String(user.id), email: user.email })
+  const token = await signToken({ sub: String(user.id), email: user.email, role: user.role })
 
   const response = NextResponse.json({ email: user.email })
   response.cookies.set(COOKIE_NAME, token, {

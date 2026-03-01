@@ -21,7 +21,7 @@ export function comparePassword(password: string, hash: string): Promise<boolean
 
 // ── JWT helpers ───────────────────────────────────────────────────────────────
 
-export async function signToken(payload: { sub: string; email: string }): Promise<string> {
+export async function signToken(payload: { sub: string; email: string; role: string }): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -31,11 +31,12 @@ export async function signToken(payload: { sub: string; email: string }): Promis
 
 export async function verifyToken(
   token: string
-): Promise<{ sub: string; email: string } | null> {
+): Promise<{ sub: string; email: string; role: string } | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET)
     if (typeof payload.sub !== 'string' || typeof payload.email !== 'string') return null
-    return { sub: payload.sub, email: payload.email }
+    const role = typeof payload.role === 'string' ? payload.role : 'USER'
+    return { sub: payload.sub, email: payload.email, role }
   } catch {
     return null
   }
@@ -45,7 +46,7 @@ export async function verifyToken(
 
 export async function getSessionUser(
   request: NextRequest | Request
-): Promise<{ id: number; email: string } | null> {
+): Promise<{ id: number; email: string; role: string } | null> {
   const cookieHeader = request.headers.get('cookie') ?? ''
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`))
   if (!match) return null
@@ -54,7 +55,7 @@ export async function getSessionUser(
   const payload = await verifyToken(token)
   if (!payload) return null
 
-  return { id: Number(payload.sub), email: payload.email }
+  return { id: Number(payload.sub), email: payload.email, role: payload.role }
 }
 
 export { COOKIE_NAME }

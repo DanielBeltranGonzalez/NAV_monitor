@@ -46,6 +46,7 @@ jest.mock('@/lib/prisma', () => ({
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      count: jest.fn().mockResolvedValue(1),
     },
   },
 }))
@@ -74,7 +75,7 @@ const { comparePassword } = jest.requireMock('@/lib/auth')
 describe('POST /api/auth/register', () => {
   it('registra usuario nuevo → 201 + cookie session', async () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
-    ;(prisma.user.create as jest.Mock).mockResolvedValue({ id: 1, email: 'user@test.com' })
+    ;(prisma.user.create as jest.Mock).mockResolvedValue({ id: 1, email: 'user@test.com', role: 'USER' })
 
     const res = await register(req({ email: 'user@test.com', password: 'password123' })) as any
     expect(res.status).toBe(201)

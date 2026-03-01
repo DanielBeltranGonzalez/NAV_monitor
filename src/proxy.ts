@@ -63,7 +63,17 @@ export async function proxy(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, SECRET)
+    const { payload } = await jwtVerify(token, SECRET)
+
+    // Admin-only routes
+    if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+      if (payload.role !== 'ADMIN') {
+        return pathname.startsWith('/api/')
+          ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+          : NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    }
+
     return NextResponse.next()
   } catch {
     return NextResponse.redirect(new URL('/auth/login', request.url))

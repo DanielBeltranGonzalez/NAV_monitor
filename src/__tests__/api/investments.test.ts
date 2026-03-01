@@ -38,7 +38,7 @@ jest.mock('@/lib/prisma', () => ({
 }))
 
 jest.mock('@/lib/auth', () => ({
-  getSessionUser: jest.fn().mockResolvedValue({ id: 1, email: 'test@test.com' }),
+  getSessionUser: jest.fn().mockResolvedValue({ id: 1, email: 'test@test.com', role: 'ADMIN' }),
 }))
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

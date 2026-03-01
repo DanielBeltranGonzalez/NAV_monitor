@@ -22,9 +22,11 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await hashPassword(password)
-  const user = await prisma.user.create({ data: { email, passwordHash } })
+  const count = await prisma.user.count()
+  const role = count === 0 ? 'ADMIN' : 'USER'
+  const user = await prisma.user.create({ data: { email, passwordHash, role } })
 
-  const token = await signToken({ sub: String(user.id), email: user.email })
+  const token = await signToken({ sub: String(user.id), email: user.email, role: user.role })
 
   const response = NextResponse.json({ email: user.email }, { status: 201 })
   response.cookies.set(COOKIE_NAME, token, {

@@ -15,3 +15,6 @@ prisma/backups/
 # Env
 .env
 .env.local
+
+# Local notes
+TODO
