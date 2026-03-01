@@ -27,6 +27,8 @@ jest.mock('@/lib/auth', () => ({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const { getSessionUser } = jest.requireMock('@/lib/auth')
+
 function makeValue(id: number, date: string, value: string) {
   return { id, date: new Date(date + 'T00:00:00Z'), value }
 }
@@ -38,6 +40,12 @@ function makeInvestment(values: ReturnType<typeof makeValue>[]) {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('GET /api/values/dashboard', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
+    expect(res.status).toBe(401)
+  })
+
   it('devuelve current, previous, prevMonth y prevYear correctos', async () => {
     const values = [
       makeValue(4, '2024-06-15', '1400'), // current
@@ -84,7 +92,6 @@ describe('GET /api/values/dashboard', () => {
   })
 
   it('prevMonth busca en año anterior si el actual es enero', async () => {
-    // Ref date: enero 2024 → prevMonth debe ser diciembre 2023
     const values = [
       makeValue(2, '2024-01-15', '1200'), // current (enero 2024)
       makeValue(1, '2023-12-01', '1100'), // prevMonth (dic 2023) y también prevYear

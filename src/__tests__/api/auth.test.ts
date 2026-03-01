@@ -119,6 +119,13 @@ describe('POST /api/auth/register', () => {
     expect(body.error).toMatch(/número/)
   })
 
+  it('contraseña sin minúscula → 400', async () => {
+    const res = await register(req({ email: 'user@test.com', password: 'PASSWORD1' })) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/minúscula/)
+  })
+
   it('email ya registrado → 409', async () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 1, email: 'user@test.com' })
 
@@ -192,6 +199,32 @@ describe('POST /api/auth/login', () => {
     expect(body.error).toMatch(/bloqueada/)
     expect(prisma.user.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ lockedUntil: expect.any(Date) }) })
+    )
+  })
+
+  it('bloqueo expirado → permite el login', async () => {
+    ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      ...fakeUser,
+      lockedUntil: new Date(Date.now() - 1000), // expirado hace 1 segundo
+    })
+    ;(comparePassword as jest.Mock).mockResolvedValue(true)
+
+    const res = await login(req({ email: 'user@test.com', password: 'Password1' })) as any
+    expect(res.status).toBe(200)
+  })
+
+  it('login exitoso resetea loginAttempts y lockedUntil a 0/null', async () => {
+    ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      ...fakeUser,
+      loginAttempts: 3,
+    })
+    ;(comparePassword as jest.Mock).mockResolvedValue(true)
+
+    await login(req({ email: 'user@test.com', password: 'Password1' }))
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ loginAttempts: 0, lockedUntil: null }),
+      })
     )
   })
 

@@ -28,6 +28,8 @@ jest.mock('@/lib/auth', () => ({
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
+const { getSessionUser } = jest.requireMock('@/lib/auth')
+
 function req(body: unknown) {
   return new Request('http://localhost/api/values', {
     method: 'POST',
@@ -46,6 +48,12 @@ describe('POST /api/values', () => {
     ;(prisma.investment.findUnique as jest.Mock).mockResolvedValue(fakeInvestment)
     ;(prisma.investmentValue.findFirst as jest.Mock).mockResolvedValue(null)
     ;(prisma.investmentValue.create as jest.Mock).mockResolvedValue({ id: 10, ...validBody })
+  })
+
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await POST(req(validBody)) as any
+    expect(res.status).toBe(401)
   })
 
   it('crea valor nuevo → 201', async () => {

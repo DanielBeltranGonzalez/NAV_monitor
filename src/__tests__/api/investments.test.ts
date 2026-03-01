@@ -44,10 +44,19 @@ jest.mock('@/lib/auth', () => ({
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const { Prisma } = jest.requireMock('@prisma/client')
+const { getSessionUser } = jest.requireMock('@/lib/auth')
 
 function req(body: unknown, method = 'POST') {
   return new Request('http://localhost/api/investments', {
     method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+function patchReq(body: unknown) {
+  return new Request('http://localhost/api/investments/1', {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
@@ -59,7 +68,13 @@ const fakeInvestment = { id: 1, name: 'Fondo A', bankId: 2, userId: 1, bank: { n
 // ── GET /api/investments ──────────────────────────────────────────────────────
 
 describe('GET /api/investments', () => {
-  it('devuelve lista de inversiones', async () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await GET(new Request('http://localhost/api/investments')) as any
+    expect(res.status).toBe(401)
+  })
+
+  it('devuelve lista de inversiones → 200', async () => {
     const investments = [{ ...fakeInvestment, values: [] }]
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue(investments)
 
@@ -72,6 +87,12 @@ describe('GET /api/investments', () => {
 // ── POST /api/investments ─────────────────────────────────────────────────────
 
 describe('POST /api/investments', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await POST(req({ name: 'Fondo A', bankId: 2 })) as any
+    expect(res.status).toBe(401)
+  })
+
   it('crea inversión válida → 201', async () => {
     ;(prisma.investment.create as jest.Mock).mockResolvedValue(fakeInvestment)
 
@@ -82,6 +103,11 @@ describe('POST /api/investments', () => {
 
   it('nombre vacío → 400', async () => {
     const res = await POST(req({ name: '', bankId: 1 })) as any
+    expect(res.status).toBe(400)
+  })
+
+  it('nombre mayor de 255 caracteres → 400', async () => {
+    const res = await POST(req({ name: 'F'.repeat(256), bankId: 1 })) as any
     expect(res.status).toBe(400)
   })
 
@@ -99,50 +125,46 @@ describe('POST /api/investments', () => {
 // ── PATCH /api/investments/[id] ───────────────────────────────────────────────
 
 describe('PATCH /api/investments/[id]', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await PATCH(patchReq({ name: 'X' }), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(401)
+  })
+
   it('actualiza nombre → 200', async () => {
     ;(prisma.investment.findUnique as jest.Mock).mockResolvedValue(fakeInvestment)
     const updated = { ...fakeInvestment, name: 'Nuevo nombre' }
     ;(prisma.investment.update as jest.Mock).mockResolvedValue(updated)
 
-    const res = await PATCH(
-      new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Nuevo nombre' }) }),
-      { params: fakeParams('1') }
-    ) as any
+    const res = await PATCH(patchReq({ name: 'Nuevo nombre' }), { params: fakeParams('1') }) as any
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(updated)
   })
 
+  it('nombre mayor de 255 caracteres → 400', async () => {
+    const res = await PATCH(patchReq({ name: 'X'.repeat(256) }), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(400)
+  })
+
   it('sin campos → 400', async () => {
-    const res = await PATCH(
-      new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }),
-      { params: fakeParams('1') }
-    ) as any
+    const res = await PATCH(patchReq({}), { params: fakeParams('1') }) as any
     expect(res.status).toBe(400)
   })
 
   it('id no numérico → 400', async () => {
-    const res = await PATCH(
-      new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'X' }) }),
-      { params: fakeParams('abc') }
-    ) as any
+    const res = await PATCH(patchReq({ name: 'X' }), { params: fakeParams('abc') }) as any
     expect(res.status).toBe(400)
   })
 
   it('inversión no encontrada → 404', async () => {
     ;(prisma.investment.findUnique as jest.Mock).mockResolvedValue(null)
-    const res = await PATCH(
-      new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'X' }) }),
-      { params: fakeParams('99') }
-    ) as any
+    const res = await PATCH(patchReq({ name: 'X' }), { params: fakeParams('99') }) as any
     expect(res.status).toBe(404)
   })
 
   it('inversión de otro usuario → 403', async () => {
     ;(prisma.investment.findUnique as jest.Mock).mockResolvedValue({ ...fakeInvestment, userId: 99 })
-    const res = await PATCH(
-      new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'X' }) }),
-      { params: fakeParams('1') }
-    ) as any
+    const res = await PATCH(patchReq({ name: 'X' }), { params: fakeParams('1') }) as any
     expect(res.status).toBe(403)
   })
 })
@@ -150,6 +172,12 @@ describe('PATCH /api/investments/[id]', () => {
 // ── DELETE /api/investments/[id] ──────────────────────────────────────────────
 
 describe('DELETE /api/investments/[id]', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await DELETE(new Request('http://localhost'), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(401)
+  })
+
   it('elimina inversión → 204', async () => {
     ;(prisma.investment.findUnique as jest.Mock).mockResolvedValue(fakeInvestment)
     ;(prisma.investment.delete as jest.Mock).mockResolvedValue({})

@@ -44,6 +44,7 @@ jest.mock('@/lib/auth', () => ({
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const { Prisma } = jest.requireMock('@prisma/client')
+const { getSessionUser } = jest.requireMock('@/lib/auth')
 
 function req(body: unknown, method = 'POST') {
   return new Request('http://localhost/api/banks', {
@@ -67,7 +68,13 @@ const fakeBank = { id: 1, name: 'Bankinter', userId: 1 }
 // ── GET /api/banks ────────────────────────────────────────────────────────────
 
 describe('GET /api/banks', () => {
-  it('devuelve lista de bancos', async () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await GET(new Request('http://localhost/api/banks')) as any
+    expect(res.status).toBe(401)
+  })
+
+  it('devuelve lista de bancos → 200', async () => {
     const banks = [fakeBank]
     ;(prisma.bank.findMany as jest.Mock).mockResolvedValue(banks)
 
@@ -80,6 +87,12 @@ describe('GET /api/banks', () => {
 // ── POST /api/banks ───────────────────────────────────────────────────────────
 
 describe('POST /api/banks', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await POST(req({ name: 'Bankinter' })) as any
+    expect(res.status).toBe(401)
+  })
+
   it('crea banco con nombre válido → 201', async () => {
     ;(prisma.bank.create as jest.Mock).mockResolvedValue(fakeBank)
 
@@ -98,6 +111,11 @@ describe('POST /api/banks', () => {
     expect(res.status).toBe(400)
   })
 
+  it('nombre mayor de 255 caracteres → 400', async () => {
+    const res = await POST(req({ name: 'A'.repeat(256) })) as any
+    expect(res.status).toBe(400)
+  })
+
   it('nombre duplicado → 409', async () => {
     ;(prisma.bank.create as jest.Mock).mockRejectedValue(
       new Prisma.PrismaClientKnownRequestError('Unique', { code: 'P2002' })
@@ -110,6 +128,12 @@ describe('POST /api/banks', () => {
 // ── PATCH /api/banks/[id] ─────────────────────────────────────────────────────
 
 describe('PATCH /api/banks/[id]', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await PATCH(reqWithParams({ name: 'X' }), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(401)
+  })
+
   it('actualiza nombre → 200', async () => {
     ;(prisma.bank.findUnique as jest.Mock).mockResolvedValue(fakeBank)
     ;(prisma.bank.update as jest.Mock).mockResolvedValue({ ...fakeBank, name: 'Sabadell' })
@@ -127,6 +151,11 @@ describe('PATCH /api/banks/[id]', () => {
   it('nombre vacío → 400', async () => {
     ;(prisma.bank.findUnique as jest.Mock).mockResolvedValue(fakeBank)
     const res = await PATCH(reqWithParams({ name: '' }), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(400)
+  })
+
+  it('nombre mayor de 255 caracteres → 400', async () => {
+    const res = await PATCH(reqWithParams({ name: 'B'.repeat(256) }), { params: fakeParams('1') }) as any
     expect(res.status).toBe(400)
   })
 
@@ -155,6 +184,12 @@ describe('PATCH /api/banks/[id]', () => {
 // ── DELETE /api/banks/[id] ────────────────────────────────────────────────────
 
 describe('DELETE /api/banks/[id]', () => {
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValueOnce(null)
+    const res = await DELETE(new Request('http://localhost'), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(401)
+  })
+
   it('elimina banco → 204', async () => {
     ;(prisma.bank.findUnique as jest.Mock).mockResolvedValue(fakeBank)
     ;(prisma.bank.delete as jest.Mock).mockResolvedValue({})
