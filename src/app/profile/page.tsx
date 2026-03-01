@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { Download, Eye, EyeOff } from "lucide-react"
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState("")
@@ -14,6 +14,10 @@ export default function ProfilePage() {
   const [pwError, setPwError] = useState("")
   const [pwSuccess, setPwSuccess] = useState(false)
   const [pwLoading, setPwLoading] = useState(false)
+
+  // Exportar CSV
+  const [exportLoading, setExportLoading] = useState(false)
+  const [exportError, setExportError] = useState("")
 
   // Eliminar cuenta
   const [confirm, setConfirm] = useState("")
@@ -49,6 +53,31 @@ export default function ProfilePage() {
       setPwError("Error de conexión")
     } finally {
       setPwLoading(false)
+    }
+  }
+
+  async function handleExport() {
+    setExportError("")
+    setExportLoading(true)
+    try {
+      const res = await fetch("/api/export/csv")
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setExportError(data.error ?? "Error al generar el CSV")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      const today = new Date().toISOString().slice(0, 10)
+      a.download = `nav_export_${today}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setExportError("Error de conexión")
+    } finally {
+      setExportLoading(false)
     }
   }
 
@@ -133,6 +162,25 @@ export default function ProfilePage() {
             {pwLoading ? "Guardando..." : "Cambiar contraseña"}
           </button>
         </form>
+      </div>
+
+      {/* Exportar datos */}
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Exportar datos</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Descarga tu historial completo de inversiones en formato CSV.
+          </p>
+        </div>
+        {exportError && <p className="text-sm text-red-600">{exportError}</p>}
+        <button
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download className="h-4 w-4" />
+          {exportLoading ? "Generando..." : "Descargar CSV"}
+        </button>
       </div>
 
       {/* Eliminar cuenta */}
