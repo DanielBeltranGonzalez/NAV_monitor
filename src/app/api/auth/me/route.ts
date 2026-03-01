@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser, COOKIE_NAME, comparePassword, hashPassword } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logEvent } from '@/lib/audit'
 
 export async function GET(request: Request) {
   const user = await getSessionUser(request as any)
@@ -28,6 +29,7 @@ export async function PATCH(request: Request) {
 
   const passwordHash = await hashPassword(newPassword)
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } })
+  await logEvent('PASSWORD_CHANGED', user.email)
 
   return NextResponse.json({ ok: true })
 }
@@ -41,6 +43,7 @@ export async function DELETE(request: Request) {
   }
 
   await prisma.user.delete({ where: { id: user.id } })
+  await logEvent('ACCOUNT_DELETED', user.email)
 
   const response = NextResponse.json({ ok: true })
   response.cookies.set(COOKIE_NAME, '', { maxAge: 0, path: '/' })

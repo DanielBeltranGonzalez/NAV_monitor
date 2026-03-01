@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSessionUser, hashPassword } from '@/lib/auth'
+import { logEvent } from '@/lib/audit'
 
 const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
 
@@ -24,10 +25,12 @@ export async function POST(
   const password = generatePassword()
   const passwordHash = await hashPassword(password)
 
-  await prisma.user.update({
+  const target = await prisma.user.update({
     where: { id: targetId },
     data: { passwordHash },
+    select: { email: true },
   })
+  await logEvent('PASSWORD_RESET', user.email, target.email)
 
   return NextResponse.json({ password })
 }

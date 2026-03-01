@@ -39,6 +39,16 @@ model Investment {
   values    InvestmentValue[]
 }
 
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  event       String
+  userEmail   String
+  targetEmail String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model InvestmentValue {
   id           Int        @id @default(autoincrement())
   investmentId Int

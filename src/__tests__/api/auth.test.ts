@@ -49,6 +49,9 @@ jest.mock('@/lib/prisma', () => ({
       update: jest.fn().mockResolvedValue({}),
       count: jest.fn().mockResolvedValue(1),
     },
+    auditLog: {
+      create: jest.fn().mockResolvedValue({}),
+    },
   },
 }))
 
