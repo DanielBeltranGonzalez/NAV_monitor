@@ -2,6 +2,32 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSessionUser } from '@/lib/auth'
 
+export async function GET(request: Request) {
+  const user = await getSessionUser(request)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const rawId = searchParams.get('investmentId')
+  if (!rawId) return NextResponse.json({ error: 'investmentId is required' }, { status: 400 })
+
+  const investmentId = parseInt(rawId)
+  if (isNaN(investmentId)) return NextResponse.json({ error: 'Invalid investmentId' }, { status: 400 })
+
+  const investment = await prisma.investment.findUnique({ where: { id: investmentId } })
+  if (!investment) return NextResponse.json({ error: 'Investment not found' }, { status: 404 })
+  if (investment.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const values = await prisma.investmentValue.findMany({
+    where: { investmentId },
+    orderBy: { date: 'desc' },
+    select: { id: true, date: true, value: true },
+  })
+
+  return NextResponse.json(
+    values.map((v) => ({ id: v.id, date: v.date.toISOString(), value: String(v.value) }))
+  )
+}
+
 export async function POST(request: Request) {
   const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

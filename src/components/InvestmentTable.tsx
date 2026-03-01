@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Trash2, Pencil, Check, X } from 'lucide-react'
+import { Trash2, Pencil, Check, X, History } from 'lucide-react'
+import Link from 'next/link'
 import { formatEUR, formatDate } from '@/lib/formatters'
 
 interface InvestmentValue {
@@ -194,6 +195,16 @@ export function InvestmentTable({
                   <>
                     <Button
                       variant="ghost" size="icon"
+                      asChild
+                      className="h-8 w-8"
+                      title="Historial de valores"
+                    >
+                      <Link href={`/investments/${inv.id}/values`}>
+                        <History className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon"
                       onClick={() => startEdit(inv)}
                       className="h-8 w-8"
                     >
@@ -224,7 +235,7 @@ export function InvestmentTable({
       <col />
       <col className="w-36" />
       <col className="w-36" />
-      <col className="w-24" />
+      <col className="w-32" />
     </colgroup>
   )
 
