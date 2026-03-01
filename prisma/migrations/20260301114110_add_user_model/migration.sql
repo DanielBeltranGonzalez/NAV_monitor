@@ -9,10 +9,6 @@ CREATE TABLE "User" (
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
--- Insert default user so existing rows can reference userId=1
-INSERT INTO "User" ("id", "email", "passwordHash", "createdAt")
-VALUES (1, 'admin@example.com', 'PLACEHOLDER', CURRENT_TIMESTAMP);
-
 -- RedefineTables
 PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
