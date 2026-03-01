@@ -38,7 +38,9 @@ Portainer construirá la imagen, creará el volumen `nav_data` (donde vive la ba
 
 Al primer inicio, `docker-entrypoint.sh` ejecuta `prisma migrate deploy` automáticamente, creando el esquema de la base de datos.
 
-La instalación crea un usuario test@test.com con contraseña password123. Tras logear con el, crear un usuario, darle roles de administrador y borrar el usuario generico.
+> **La base de datos arranca vacía.** No hay ningún usuario precreado.
+> El **primer usuario que se registre** en `/auth/register` recibirá automáticamente el rol **ADMIN**.
+> Regístrate con tu cuenta definitiva antes de compartir la URL con otros usuarios.
 
 ---
 
