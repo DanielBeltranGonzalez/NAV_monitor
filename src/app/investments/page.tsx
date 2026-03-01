@@ -34,7 +34,18 @@ export default async function InvestmentsPage() {
           </Link>
         </Button>
       </div>
-      <InvestmentTable investments={investments as any} banks={banks} />
+      <InvestmentTable
+        investments={investments.map((inv) => ({
+          ...inv,
+          createdAt: inv.createdAt.toISOString(),
+          values: inv.values.map((v) => ({
+            ...v,
+            date: v.date.toISOString(),
+            value: String(v.value),
+          })),
+        }))}
+        banks={banks}
+      />
     </div>
   )
 }
