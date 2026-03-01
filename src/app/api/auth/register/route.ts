@@ -24,7 +24,9 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await hashPassword(password)
-  const user = await prisma.user.create({ data: { email, passwordHash } })
+  const userCount = await prisma.user.count()
+  const role = userCount === 0 ? 'ADMIN' : 'USER'
+  const user = await prisma.user.create({ data: { email, passwordHash, role } })
   await logEvent('USER_REGISTERED', user.email)
 
   const token = await signToken({ sub: String(user.id), email: user.email, role: user.role })
