@@ -17,6 +17,7 @@ export function formatDate(date: string | Date): string {
 }
 
 export function formatChangePercent(pct: number): string {
+  if (Math.abs(pct) > 9999) return pct >= 0 ? '+Enorme' : '-Enorme'
   const sign = pct >= 0 ? '+' : ''
   return `${sign}${pct.toFixed(2)}%`
 }
