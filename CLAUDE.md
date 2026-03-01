@@ -35,6 +35,37 @@ healthcheck:
   start_period: 30s
 ```
 
+## Base de datos y migraciones
+
+🚨 **Cualquier cambio en `prisma/schema.prisma` requiere una migración.** Nunca modifiques el schema sin crear y aplicar la migración correspondiente.
+
+### Proceso en este entorno
+
+`prisma migrate dev` **no funciona** en terminal no interactivo. Usar siempre este flujo:
+
+1. Modificar `prisma/schema.prisma`
+2. Generar el SQL de la migración:
+   ```bash
+   npx prisma migrate diff \
+     --from-schema-datasource prisma/schema.prisma \
+     --to-schema-datamodel prisma/schema.prisma \
+     --script
+   ```
+3. Crear el directorio `prisma/migrations/YYYYMMDDHHMMSS_nombre/migration.sql` con el SQL generado
+4. Aplicar la migración:
+   ```bash
+   npx prisma migrate deploy
+   ```
+5. Regenerar el cliente si es necesario:
+   ```bash
+   npx prisma generate
+   ```
+
+### Reglas
+- El fichero de migración **siempre** va en el mismo commit que el cambio de schema
+- Incluir `onDelete: Cascade` en todas las relaciones hijas cuando tenga sentido (evitar registros huérfanos)
+- Antes de migrar, hacer backup: `npm run db:backup`
+
 ## Commands
 
 ```bash
