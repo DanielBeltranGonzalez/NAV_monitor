@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import { DashboardRow } from '@/components/DashboardCard'
 import { DashboardChart } from '@/components/DashboardChart'
 import { DashboardDatePicker } from '@/components/DashboardDatePicker'
-import { formatEUR, formatChangePercent } from '@/lib/formatters'
+import { formatEUR, formatChangePercent, formatDate } from '@/lib/formatters'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
