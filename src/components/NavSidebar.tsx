@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
+import pkg from "../../package.json"
 
 const EVENTS_LAST_READ_KEY = "eventsLastRead"
 
@@ -158,7 +159,7 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           Cerrar sesión
         </button>
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v1.0.3</p>
+          <p>v{pkg.version}</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>
