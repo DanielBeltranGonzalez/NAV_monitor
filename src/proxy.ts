@@ -37,9 +37,31 @@ function isPublic(pathname: string): boolean {
 
 // ── Proxy (middleware) ────────────────────────────────────────────────────────
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required in production')
+}
+
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'dev-secret-change-in-production'
 )
+
+// ── Security headers ───────────────────────────────────────────────────────
+
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains'
+  )
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+  )
+  return response
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -51,7 +73,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Public routes bypass auth check
-  if (isPublic(pathname)) return NextResponse.next()
+  if (isPublic(pathname)) return addSecurityHeaders(NextResponse.next())
 
   // Verify session cookie
   const cookieHeader = request.headers.get('cookie') ?? ''
@@ -69,12 +91,12 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
       if (payload.role !== 'ADMIN') {
         return pathname.startsWith('/api/')
-          ? NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+          ? addSecurityHeaders(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
           : NextResponse.redirect(new URL('/dashboard', request.url))
       }
     }
 
-    return NextResponse.next()
+    return addSecurityHeaders(NextResponse.next())
   } catch {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }

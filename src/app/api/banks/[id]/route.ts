@@ -15,15 +15,19 @@ export async function PATCH(
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   const { name } = await request.json()
-  if (!name || typeof name !== 'string' || name.trim() === '')
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+  const trimmedName = typeof name === 'string' ? name.trim() : ''
+  if (!trimmedName || trimmedName.length > 255)
+    return NextResponse.json(
+      { error: 'Name must be between 1 and 255 characters' },
+      { status: 400 }
+    )
 
   const bank = await prisma.bank.findUnique({ where: { id } })
   if (!bank) return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
   if (bank.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
-    const updated = await prisma.bank.update({ where: { id }, data: { name: name.trim() } })
+    const updated = await prisma.bank.update({ where: { id }, data: { name: trimmedName } })
     return NextResponse.json(updated)
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {

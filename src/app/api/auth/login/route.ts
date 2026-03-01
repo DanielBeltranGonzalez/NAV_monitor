@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { comparePassword, signToken, COOKIE_NAME } from '@/lib/auth'
+import { logEvent } from '@/lib/audit'
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -24,13 +25,14 @@ export async function POST(request: Request) {
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
+  await logEvent('USER_LOGIN', user.email)
 
   const token = await signToken({ sub: String(user.id), email: user.email, role: user.role })
 
   const response = NextResponse.json({ email: user.email })
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: 60 * 60 * 24 * 7, // 7 days
   })

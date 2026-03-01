@@ -27,15 +27,19 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { name, bankId } = body
 
-  if (!name || typeof name !== 'string' || name.trim() === '') {
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+  const trimmedName = typeof name === 'string' ? name.trim() : ''
+  if (!trimmedName || trimmedName.length > 255) {
+    return NextResponse.json(
+      { error: 'Name must be between 1 and 255 characters' },
+      { status: 400 }
+    )
   }
   if (!bankId || isNaN(Number(bankId))) {
     return NextResponse.json({ error: 'Bank is required' }, { status: 400 })
   }
 
   const investment = await prisma.investment.create({
-    data: { name: name.trim(), bankId: Number(bankId), userId: user.id },
+    data: { name: trimmedName, bankId: Number(bankId), userId: user.id },
     include: { bank: true },
   })
   return NextResponse.json(investment, { status: 201 })

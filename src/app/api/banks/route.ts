@@ -21,13 +21,17 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { name } = body
 
-  if (!name || typeof name !== 'string' || name.trim() === '') {
-    return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+  const trimmedName = typeof name === 'string' ? name.trim() : ''
+  if (!trimmedName || trimmedName.length > 255) {
+    return NextResponse.json(
+      { error: 'Name must be between 1 and 255 characters' },
+      { status: 400 }
+    )
   }
 
   try {
     const bank = await prisma.bank.create({
-      data: { name: name.trim(), userId: user.id },
+      data: { name: trimmedName, userId: user.id },
     })
     return NextResponse.json(bank, { status: 201 })
   } catch (e) {

@@ -25,8 +25,13 @@ jest.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findMany: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ email: 'user@test.com', role: 'USER' }),
+      count: jest.fn().mockResolvedValue(2),
       delete: jest.fn(),
       update: jest.fn(),
+    },
+    auditLog: {
+      create: jest.fn().mockResolvedValue({}),
     },
   },
 }))
@@ -99,6 +104,14 @@ describe('PATCH /api/admin/users/[id]', () => {
     })
   })
 
+  it('no se puede degradar al único admin → 400', async () => {
+    ;(prisma.user.count as jest.Mock).mockResolvedValueOnce(1)
+    const res = await PATCH(reqWithId('2', 'PATCH', { role: 'USER' }), params('2')) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/único administrador/)
+  })
+
   it('admin cambia rol USER → ADMIN → 200', async () => {
     const res = await PATCH(reqWithId('2', 'PATCH', { role: 'ADMIN' }), params('2')) as any
     expect(res.status).toBe(200)
@@ -141,6 +154,15 @@ describe('DELETE /api/admin/users/[id]', () => {
   beforeEach(() => {
     getSessionUser.mockResolvedValue({ id: 1, email: 'admin@test.com', role: 'ADMIN' })
     ;(prisma.user.delete as jest.Mock).mockResolvedValue({ id: 2 })
+  })
+
+  it('no se puede eliminar al único admin → 400', async () => {
+    ;(prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({ email: 'admin2@test.com', role: 'ADMIN' })
+    ;(prisma.user.count as jest.Mock).mockResolvedValueOnce(1)
+    const res = await DELETE(reqWithId('2', 'DELETE'), params('2')) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/único administrador/)
   })
 
   it('admin elimina otro usuario → 204', async () => {
@@ -186,6 +208,7 @@ describe('POST /api/admin/users/[id]/reset-password', () => {
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: 2 },
       data: { passwordHash: 'hashed-new-password' },
+      select: { email: true },
     })
   })
 

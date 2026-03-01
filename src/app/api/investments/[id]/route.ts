@@ -16,7 +16,15 @@ export async function PATCH(
 
   const { name, bankId } = await request.json()
   const data: { name?: string; bankId?: number } = {}
-  if (name && typeof name === 'string' && name.trim()) data.name = name.trim()
+  const trimmedName = typeof name === 'string' ? name.trim() : ''
+  if (trimmedName) {
+    if (trimmedName.length > 255)
+      return NextResponse.json(
+        { error: 'Name must be between 1 and 255 characters' },
+        { status: 400 }
+      )
+    data.name = trimmedName
+  }
   if (bankId) data.bankId = Number(bankId)
   if (Object.keys(data).length === 0)
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
