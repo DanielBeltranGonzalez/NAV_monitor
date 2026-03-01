@@ -4,9 +4,10 @@ import { Prisma } from '@prisma/client'
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id)
+  const { id: rawId } = await params
+  const id = parseInt(rawId)
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
   const { name, bankId } = await request.json()
   const data: { name?: string; bankId?: number } = {}
@@ -32,9 +33,10 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id)
+  const { id: rawId } = await params
+  const id = parseInt(rawId)
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
   }

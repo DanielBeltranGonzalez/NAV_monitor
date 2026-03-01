@@ -1,0 +1,14 @@
+services:
+  nav-monitor:
+    build: .
+    container_name: nav-monitor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/data/nav.db
+    volumes:
+      - nav_data:/data
+
+volumes:
+  nav_data:
