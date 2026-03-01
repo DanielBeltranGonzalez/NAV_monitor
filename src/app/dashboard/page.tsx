@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { DashboardRow } from '@/components/DashboardCard'
 import { DashboardChart } from '@/components/DashboardChart'
+import { DashboardDatePicker } from '@/components/DashboardDatePicker'
 import { formatEUR, formatChangePercent } from '@/lib/formatters'
 import { prisma } from '@/lib/prisma'
 
@@ -112,7 +113,7 @@ function TotalRow({ investments }: { investments: InvestmentData[] }) {
   )
 }
 
-async function getDashboardData(): Promise<InvestmentData[]> {
+async function getDashboardData(selectedDate: Date): Promise<InvestmentData[]> {
   const investments = await prisma.investment.findMany({
     orderBy: [{ bank: { name: 'asc' } }, { name: 'asc' }],
     include: {
@@ -125,7 +126,7 @@ async function getDashboardData(): Promise<InvestmentData[]> {
 
   return investments.flatMap((inv) => {
     const values = inv.values
-    const current = values[0] ?? null
+    const current = values.find((v) => new Date(v.date) <= selectedDate) ?? null
 
     if (!current || Number(current.value) === 0) return []
 
@@ -167,8 +168,28 @@ async function getDashboardData(): Promise<InvestmentData[]> {
   })
 }
 
-export default async function DashboardPage() {
-  const investments = await getDashboardData()
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>
+}) {
+  const params = await searchParams
+
+  const latestValue = await prisma.investmentValue.findFirst({
+    orderBy: { date: 'desc' },
+    select: { date: true },
+  })
+
+  const maxDateStr = latestValue
+    ? latestValue.date.toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
+
+  const selectedDateStr = params.date ?? maxDateStr
+
+  // Parse as UTC midnight to match stored dates
+  const selectedDate = new Date(`${selectedDateStr}T23:59:59.999Z`)
+
+  const investments = await getDashboardData(selectedDate)
 
   // Group by bank preserving order
   const bankGroups: Map<string, InvestmentData[]> = new Map()
@@ -179,8 +200,9 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Dashboard</h1>
+        <DashboardDatePicker value={selectedDateStr} max={maxDateStr} />
       </div>
 
       {investments.length === 0 ? (
