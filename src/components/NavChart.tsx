@@ -35,9 +35,9 @@ interface TooltipProps {
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-slate-200 rounded-md px-3 py-2 shadow text-sm">
-      <p className="text-slate-500 text-xs mb-1">{label}</p>
-      <p className="font-semibold text-slate-800">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md px-3 py-2 shadow text-sm">
+      <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">{label}</p>
+      <p className="font-semibold text-slate-800 dark:text-slate-100">
         {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(payload[0].value)}
       </p>
     </div>
