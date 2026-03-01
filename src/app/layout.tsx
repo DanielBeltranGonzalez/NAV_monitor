@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { NavSidebar } from "@/components/NavSidebar"
+import { LegalModal } from "@/components/LegalModal"
 import { cookies } from "next/headers"
 import { verifyToken } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -45,6 +46,7 @@ export default async function RootLayout({
           <main className="flex-1 p-8 bg-slate-50">
             {children}
           </main>
+          {userEmail && <LegalModal />}
         </div>
       </body>
     </html>

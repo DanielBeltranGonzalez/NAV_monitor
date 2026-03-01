@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { TrendingUp, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -28,7 +26,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, password }),
       })
       if (res.ok) {
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       } else {
         const data = await res.json()
         setError(data.error ?? "Error al registrarse")
