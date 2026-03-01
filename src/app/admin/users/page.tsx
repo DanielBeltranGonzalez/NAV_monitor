@@ -22,28 +22,18 @@ export default function AdminUsersPage() {
       const data = await res.json()
       setUsers(data)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
-    // Determine current user id from the first ADMIN in list (rough heuristic)
-    // Actually, fetch current session info from a small self-identify call
-    fetch("/api/admin/users")
-      .then((r) => r.json())
-      .then((data: UserRow[]) => {
-        setUsers(data)
-        // We'll identify current user via the token — read from cookie not possible client-side
-        // We rely on the backend 400 "No puedes eliminarte a ti mismo" for safety
+    Promise.all([
+      fetch("/api/admin/users").then((r) => r.json()),
+      fetch("/api/auth/me").then((r) => r.json()),
+    ])
+      .then(([usersData, meData]) => {
+        setUsers(usersData)
+        if (meData?.id) setCurrentUserId(meData.id)
       })
       .finally(() => setLoading(false))
-
-    // Get current user id via profile endpoint (using dashboard as proxy)
-    fetch("/api/values/dashboard")
-      .then((r) => r.json())
-      .then(() => {
-        // Can't easily get current id from this, rely on server-side check instead
-      })
-      .catch(() => {})
   }, [])
 
   async function handleDelete(id: number, email: string) {
@@ -64,6 +54,22 @@ export default function AdminUsersPage() {
       setResetPasswords((prev) => ({ ...prev, [id]: password }))
     } else {
       alert("Error al resetear contraseña")
+    }
+  }
+
+  async function handleToggleRole(u: UserRow) {
+    const newRole = u.role === "ADMIN" ? "USER" : "ADMIN"
+    const res = await fetch(`/api/admin/users/${u.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: updated.role } : x)))
+    } else {
+      const body = await res.json().catch(() => ({}))
+      alert(body.error ?? "Error al cambiar rol")
     }
   }
 
@@ -117,6 +123,14 @@ export default function AdminUsersPage() {
                 </td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <button
+                    onClick={() => handleToggleRole(u)}
+                    disabled={u.id === currentUserId}
+                    className="text-xs px-3 py-1 rounded border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={u.id === currentUserId ? "No puedes cambiar tu propio rol" : u.role === "ADMIN" ? "Degradar a Usuario" : "Promover a Admin"}
+                  >
+                    {u.role === "ADMIN" ? "→ Usuario" : "→ Admin"}
+                  </button>
+                  <button
                     onClick={() => handleResetPassword(u.id)}
                     className="text-xs px-3 py-1 rounded border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors"
                   >
@@ -124,9 +138,9 @@ export default function AdminUsersPage() {
                   </button>
                   <button
                     onClick={() => handleDelete(u.id, u.email)}
-                    disabled={u.role === "ADMIN"}
+                    disabled={u.id === currentUserId}
                     className="text-xs px-3 py-1 rounded border border-red-300 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    title={u.role === "ADMIN" ? "No se puede eliminar al administrador" : "Eliminar usuario"}
+                    title={u.id === currentUserId ? "No puedes eliminarte a ti mismo" : "Eliminar usuario"}
                   >
                     Borrar
                   </button>

@@ -1,5 +1,5 @@
 import { GET } from '@/app/api/admin/users/route'
-import { DELETE } from '@/app/api/admin/users/[id]/route'
+import { PATCH, DELETE } from '@/app/api/admin/users/[id]/route'
 import { POST as resetPassword } from '@/app/api/admin/users/[id]/reset-password/route'
 import { prisma } from '@/lib/prisma'
 
@@ -44,8 +44,11 @@ function req(method = 'GET') {
   return new Request('http://localhost/api/admin/users', { method })
 }
 
-function reqWithId(id: string, method: string) {
-  return new Request(`http://localhost/api/admin/users/${id}`, { method })
+function reqWithId(id: string, method: string, body?: object) {
+  return new Request(`http://localhost/api/admin/users/${id}`, {
+    method,
+    ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+  })
 }
 
 function params(id: string) {
@@ -82,6 +85,52 @@ describe('GET /api/admin/users', () => {
   it('sin sesión → 401', async () => {
     getSessionUser.mockResolvedValue(null)
     const res = await GET(req()) as any
+    expect(res.status).toBe(401)
+  })
+})
+
+// ── PATCH /api/admin/users/[id] ───────────────────────────────────────────────
+
+describe('PATCH /api/admin/users/[id]', () => {
+  beforeEach(() => {
+    getSessionUser.mockResolvedValue({ id: 1, email: 'admin@test.com', role: 'ADMIN' })
+    ;(prisma.user.update as jest.Mock).mockResolvedValue({
+      id: 2, email: 'user@test.com', role: 'ADMIN', createdAt: new Date('2024-01-02'),
+    })
+  })
+
+  it('admin cambia rol USER → ADMIN → 200', async () => {
+    const res = await PATCH(reqWithId('2', 'PATCH', { role: 'ADMIN' }), params('2')) as any
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.role).toBe('ADMIN')
+    expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 2 },
+      data: { role: 'ADMIN' },
+    }))
+  })
+
+  it('admin intenta cambiar su propio rol → 400', async () => {
+    const res = await PATCH(reqWithId('1', 'PATCH', { role: 'USER' }), params('1')) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/propio rol/)
+  })
+
+  it('rol inválido → 400', async () => {
+    const res = await PATCH(reqWithId('2', 'PATCH', { role: 'SUPERUSER' }), params('2')) as any
+    expect(res.status).toBe(400)
+  })
+
+  it('no-admin → 403', async () => {
+    getSessionUser.mockResolvedValue({ id: 2, email: 'user@test.com', role: 'USER' })
+    const res = await PATCH(reqWithId('3', 'PATCH', { role: 'ADMIN' }), params('3')) as any
+    expect(res.status).toBe(403)
+  })
+
+  it('sin sesión → 401', async () => {
+    getSessionUser.mockResolvedValue(null)
+    const res = await PATCH(reqWithId('2', 'PATCH', { role: 'ADMIN' }), params('2')) as any
     expect(res.status).toBe(401)
   })
 })

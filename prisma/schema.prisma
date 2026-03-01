@@ -21,7 +21,7 @@ model Bank {
   id          Int          @id @default(autoincrement())
   name        String
   userId      Int
-  user        User         @relation(fields: [userId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   investments Investment[]
 
   @@unique([name, userId])
@@ -32,8 +32,8 @@ model Investment {
   name      String
   bankId    Int
   userId    Int
-  bank      Bank              @relation(fields: [bankId], references: [id])
-  user      User              @relation(fields: [userId], references: [id])
+  bank      Bank              @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime          @default(now())
   values    InvestmentValue[]
 }
