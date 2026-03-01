@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { NavSidebar } from "@/components/NavSidebar"
 import { LegalModal } from "@/components/LegalModal"
+import { ThemeProvider } from "@/components/ThemeProvider"
 import { cookies } from "next/headers"
 import { verifyToken } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -39,15 +40,20 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="es">
-      <body className={inter.className} suppressHydrationWarning>
-        <div className="flex min-h-screen">
-          <NavSidebar userEmail={userEmail} isAdmin={isAdmin} lastLoginAt={lastLoginAt} />
-          <main className="flex-1 p-8 bg-slate-50">
-            {children}
-          </main>
-          {userEmail && <LegalModal />}
-        </div>
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');})()` }} />
+      </head>
+      <body className={inter.className}>
+        <ThemeProvider>
+          <div className="flex min-h-screen">
+            <NavSidebar userEmail={userEmail} isAdmin={isAdmin} lastLoginAt={lastLoginAt} />
+            <main className="flex-1 p-8 bg-background">
+              {children}
+            </main>
+            {userEmail && <LegalModal />}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )

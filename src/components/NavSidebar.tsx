@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { BarChart3, TrendingUp, PlusCircle, List, Building2, LogOut, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList } from "lucide-react"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { cn } from "@/lib/utils"
 import pkg from "../../package.json"
 
@@ -143,6 +144,7 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
         </Link>
       </div>
       <div className="p-4 border-t border-slate-700 space-y-2">
+        <ThemeToggle />
         {userEmail && (
           <p className="text-slate-400 text-xs truncate" title={userEmail}>{userEmail}</p>
         )}

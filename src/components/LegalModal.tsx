@@ -23,14 +23,14 @@ export function LegalModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 space-y-4">
-        <h2 className="text-lg font-bold text-slate-800">Aviso legal</h2>
-        <p className="text-sm text-slate-600">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6 space-y-4">
+        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Aviso legal</h2>
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           NAV Monitor es una herramienta de seguimiento personal de inversiones.
           <strong> No constituye asesoramiento financiero</strong> y los datos mostrados
           dependen exclusivamente de la información introducida por el usuario.
         </p>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-slate-300">
           Al continuar, aceptas el uso de la aplicación bajo tu propia responsabilidad.
           Puedes consultar el aviso legal completo en cualquier momento.
         </p>

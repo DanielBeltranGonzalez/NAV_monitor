@@ -63,7 +63,7 @@ export function DashboardRow({
   prevYear,
 }: DashboardRowProps) {
   return (
-    <tr className="border-b hover:bg-slate-50 transition-colors">
+    <tr className="border-b hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
       <td className="px-4 py-3 font-medium">{name}</td>
       <td className="px-4 py-3 text-muted-foreground text-sm">{bank}</td>
       <td className="px-4 py-3 text-right tabular-nums font-semibold">
