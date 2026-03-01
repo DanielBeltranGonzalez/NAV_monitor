@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { DashboardRow } from '@/components/DashboardCard'
+import { DashboardChart } from '@/components/DashboardChart'
 import { formatEUR, formatChangePercent } from '@/lib/formatters'
 import { prisma } from '@/lib/prisma'
 
@@ -187,7 +188,8 @@ export default async function DashboardPage() {
           No investments yet. Add some from the Investments section.
         </div>
       ) : (
-        <div className="rounded-md border bg-white overflow-x-auto">
+        <div>
+          <div className="rounded-md border bg-white overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 text-muted-foreground">
@@ -222,6 +224,8 @@ export default async function DashboardPage() {
               <TotalRow investments={investments} />
             </tbody>
           </table>
+          </div>
+          <DashboardChart />
         </div>
       )}
     </div>
