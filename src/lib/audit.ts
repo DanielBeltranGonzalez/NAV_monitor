@@ -7,6 +7,7 @@ export type AuditEvent =
   | 'PASSWORD_RESET'
   | 'ACCOUNT_DELETED'
   | 'ROLE_CHANGED'
+  | 'BACKUP_DOWNLOADED'
 
 export async function logEvent(
   event: AuditEvent,
@@ -25,4 +26,5 @@ export const EVENT_LABELS: Record<AuditEvent, string> = {
   PASSWORD_RESET: 'Reset de contraseña (admin)',
   ACCOUNT_DELETED: 'Cuenta eliminada',
   ROLE_CHANGED: 'Cambio de rol',
+  BACKUP_DOWNLOADED: 'Descarga de backup',
 }

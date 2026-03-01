@@ -18,7 +18,8 @@ const EVENT_COLORS: Record<AuditEvent, string> = {
   PASSWORD_CHANGED: "bg-blue-100 text-blue-800",
   PASSWORD_RESET:   "bg-amber-100 text-amber-800",
   ACCOUNT_DELETED:  "bg-red-100 text-red-800",
-  ROLE_CHANGED:     "bg-purple-100 text-purple-800",
+  ROLE_CHANGED:        "bg-purple-100 text-purple-800",
+  BACKUP_DOWNLOADED:   "bg-gray-100 text-gray-700",
 }
 
 const EVENTS_LAST_READ_KEY = "eventsLastRead"

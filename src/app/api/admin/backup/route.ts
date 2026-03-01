@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const filename = `nav_backup_${timestamp}.db`
 
-  return new NextResponse(dbBuffer, {
+  return new NextResponse(new Uint8Array(dbBuffer), {
     status: 200,
     headers: {
       'Content-Type': 'application/octet-stream',
