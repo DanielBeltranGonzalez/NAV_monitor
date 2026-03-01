@@ -49,6 +49,7 @@ export function InvestmentTable({
   const [editing, setEditing] = useState<number | null>(null)
   const [editState, setEditState] = useState<EditState>({ name: '', bankId: '' })
   const [saving, setSaving] = useState(false)
+  const [editError, setEditError] = useState('')
 
   function startEdit(inv: Investment) {
     setEditing(inv.id)
@@ -57,17 +58,24 @@ export function InvestmentTable({
 
   function cancelEdit() {
     setEditing(null)
+    setEditError('')
   }
 
   async function saveEdit(id: number) {
     setSaving(true)
-    await fetch(`/api/investments/${id}`, {
+    setEditError('')
+    const res = await fetch(`/api/investments/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: editState.name, bankId: Number(editState.bankId) }),
     })
-    setEditing(null)
     setSaving(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setEditError(data.error ?? 'Error al guardar')
+      return
+    }
+    setEditing(null)
     router.refresh()
   }
 
@@ -160,6 +168,9 @@ export function InvestmentTable({
               {latest ? formatDate(latest.date) : '—'}
             </TableCell>
             <TableCell>
+              {isEditing && editError && (
+                <p className="text-xs text-destructive text-right mb-1">{editError}</p>
+              )}
               <div className="flex justify-end gap-1">
                 {isEditing ? (
                   <>

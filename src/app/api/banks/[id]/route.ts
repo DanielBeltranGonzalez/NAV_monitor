@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function PATCH(
   request: Request,
@@ -13,8 +14,13 @@ export async function PATCH(
   try {
     const bank = await prisma.bank.update({ where: { id }, data: { name: name.trim() } })
     return NextResponse.json(bank)
-  } catch {
-    return NextResponse.json({ error: 'Bank name already exists' }, { status: 409 })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === 'P2002') return NextResponse.json({ error: 'Bank name already exists' }, { status: 409 })
+      if (e.code === 'P2025') return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
+    }
+    console.error(e)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -28,11 +34,15 @@ export async function DELETE(
   }
   try {
     await prisma.bank.delete({ where: { id } })
-  } catch {
-    return NextResponse.json(
-      { error: 'Cannot delete bank with linked investments' },
-      { status: 409 }
-    )
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === 'P2003' || e.code === 'P2014')
+        return NextResponse.json({ error: 'Cannot delete bank with linked investments' }, { status: 409 })
+      if (e.code === 'P2025')
+        return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
+    }
+    console.error(e)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
   return new NextResponse(null, { status: 204 })
 }

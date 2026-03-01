@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function PATCH(
   request: Request,
@@ -13,12 +14,20 @@ export async function PATCH(
   if (bankId) data.bankId = Number(bankId)
   if (Object.keys(data).length === 0)
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
-  const investment = await prisma.investment.update({
-    where: { id },
-    data,
-    include: { bank: true },
-  })
-  return NextResponse.json(investment)
+  try {
+    const investment = await prisma.investment.update({
+      where: { id },
+      data,
+      include: { bank: true },
+    })
+    return NextResponse.json(investment)
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+      return NextResponse.json({ error: 'Investment not found' }, { status: 404 })
+    }
+    console.error(e)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 export async function DELETE(
@@ -29,7 +38,14 @@ export async function DELETE(
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
   }
-
-  await prisma.investment.delete({ where: { id } })
+  try {
+    await prisma.investment.delete({ where: { id } })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+      return NextResponse.json({ error: 'Investment not found' }, { status: 404 })
+    }
+    console.error(e)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
   return new NextResponse(null, { status: 204 })
 }
