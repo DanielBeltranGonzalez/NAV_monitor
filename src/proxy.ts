@@ -8,12 +8,34 @@ const requests = new Map<string, { count: number; resetAt: number }>()
 const WINDOW_MS = 60_000
 const MAX_REQUESTS = 120
 
+// Stricter limit for login endpoint: 10 attempts per IP per 15 minutes
+const loginRequests = new Map<string, { count: number; resetAt: number }>()
+const LOGIN_WINDOW_MS = 15 * 60_000
+const LOGIN_MAX_REQUESTS = 10
+
 function rateLimit(request: NextRequest): NextResponse | null {
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const now = Date.now()
-  const entry = requests.get(ip)
 
+  // Strict per-endpoint limit for login
+  if (request.nextUrl.pathname === '/api/auth/login') {
+    const entry = loginRequests.get(ip)
+    if (!entry || now > entry.resetAt) {
+      loginRequests.set(ip, { count: 1, resetAt: now + LOGIN_WINDOW_MS })
+    } else {
+      entry.count++
+      if (entry.count > LOGIN_MAX_REQUESTS) {
+        return NextResponse.json(
+          { error: 'Demasiados intentos. Espera 15 minutos.' },
+          { status: 429 }
+        )
+      }
+    }
+  }
+
+  // Global limit for all API routes
+  const entry = requests.get(ip)
   if (!entry || now > entry.resetAt) {
     requests.set(ip, { count: 1, resetAt: now + WINDOW_MS })
     return null

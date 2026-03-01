@@ -60,6 +60,13 @@ jest.mock('@/lib/auth', () => ({
   comparePassword: jest.fn(),
   signToken: jest.fn().mockResolvedValue('fake-jwt-token'),
   COOKIE_NAME: 'session',
+  validatePasswordComplexity: (password: string) => {
+    if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres'
+    if (!/[A-Z]/.test(password)) return 'La contraseña debe incluir al menos una mayúscula'
+    if (!/[a-z]/.test(password)) return 'La contraseña debe incluir al menos una minúscula'
+    if (!/[0-9]/.test(password)) return 'La contraseña debe incluir al menos un número'
+    return null
+  },
 }))
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -81,7 +88,7 @@ describe('POST /api/auth/register', () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
     ;(prisma.user.create as jest.Mock).mockResolvedValue({ id: 1, email: 'user@test.com', role: 'USER' })
 
-    const res = await register(req({ email: 'user@test.com', password: 'password123' })) as any
+    const res = await register(req({ email: 'user@test.com', password: 'Password1' })) as any
     expect(res.status).toBe(201)
     const body = await res.json()
     expect(body.email).toBe('user@test.com')
@@ -89,19 +96,33 @@ describe('POST /api/auth/register', () => {
   })
 
   it('email inválido → 400', async () => {
-    const res = await register(req({ email: 'notanemail', password: 'password123' })) as any
+    const res = await register(req({ email: 'notanemail', password: 'Password1' })) as any
     expect(res.status).toBe(400)
   })
 
   it('contraseña corta → 400', async () => {
-    const res = await register(req({ email: 'user@test.com', password: 'short' })) as any
+    const res = await register(req({ email: 'user@test.com', password: 'Sh0rt' })) as any
     expect(res.status).toBe(400)
+  })
+
+  it('contraseña sin mayúscula → 400', async () => {
+    const res = await register(req({ email: 'user@test.com', password: 'password1' })) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/mayúscula/)
+  })
+
+  it('contraseña sin número → 400', async () => {
+    const res = await register(req({ email: 'user@test.com', password: 'PasswordABC' })) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/número/)
   })
 
   it('email ya registrado → 409', async () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 1, email: 'user@test.com' })
 
-    const res = await register(req({ email: 'user@test.com', password: 'password123' })) as any
+    const res = await register(req({ email: 'user@test.com', password: 'Password1' })) as any
     expect(res.status).toBe(409)
   })
 })
@@ -109,13 +130,20 @@ describe('POST /api/auth/register', () => {
 // ── POST /api/auth/login ──────────────────────────────────────────────────────
 
 describe('POST /api/auth/login', () => {
-  const fakeUser = { id: 1, email: 'user@test.com', passwordHash: 'hashed-password' }
+  const fakeUser = {
+    id: 1,
+    email: 'user@test.com',
+    passwordHash: 'hashed-password',
+    role: 'USER',
+    loginAttempts: 0,
+    lockedUntil: null,
+  }
 
   it('login correcto → 200 + cookie session', async () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser)
     ;(comparePassword as jest.Mock).mockResolvedValue(true)
 
-    const res = await login(req({ email: 'user@test.com', password: 'password123' })) as any
+    const res = await login(req({ email: 'user@test.com', password: 'Password1' })) as any
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.email).toBe('user@test.com')
@@ -125,20 +153,50 @@ describe('POST /api/auth/login', () => {
   it('usuario no encontrado → 401', async () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
 
-    const res = await login(req({ email: 'noexiste@test.com', password: 'password123' })) as any
+    const res = await login(req({ email: 'noexiste@test.com', password: 'Password1' })) as any
     expect(res.status).toBe(401)
   })
 
-  it('contraseña incorrecta → 401', async () => {
+  it('contraseña incorrecta → 401 con intentos restantes', async () => {
     ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(fakeUser)
     ;(comparePassword as jest.Mock).mockResolvedValue(false)
 
-    const res = await login(req({ email: 'user@test.com', password: 'wrongpassword' })) as any
+    const res = await login(req({ email: 'user@test.com', password: 'WrongPass1' })) as any
     expect(res.status).toBe(401)
+    const body = await res.json()
+    expect(body.error).toMatch(/[Ii]ntentos restantes/)
+  })
+
+  it('cuenta bloqueada activa → 429', async () => {
+    ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      ...fakeUser,
+      lockedUntil: new Date(Date.now() + 10 * 60_000), // locked 10 min
+    })
+
+    const res = await login(req({ email: 'user@test.com', password: 'Password1' })) as any
+    expect(res.status).toBe(429)
+    const body = await res.json()
+    expect(body.error).toMatch(/bloqueada/)
+  })
+
+  it('5 intentos fallidos bloquea la cuenta → 401 con mensaje de bloqueo', async () => {
+    ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+      ...fakeUser,
+      loginAttempts: 4, // next attempt is the 5th
+    })
+    ;(comparePassword as jest.Mock).mockResolvedValue(false)
+
+    const res = await login(req({ email: 'user@test.com', password: 'WrongPass1' })) as any
+    expect(res.status).toBe(401)
+    const body = await res.json()
+    expect(body.error).toMatch(/bloqueada/)
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ lockedUntil: expect.any(Date) }) })
+    )
   })
 
   it('email ausente → 400', async () => {
-    const res = await login(req({ password: 'password123' })) as any
+    const res = await login(req({ password: 'Password1' })) as any
     expect(res.status).toBe(400)
   })
 

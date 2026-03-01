@@ -22,6 +22,13 @@ export async function POST(
   const { id } = await params
   const targetId = Number(id)
 
+  if (targetId === user.id) {
+    return NextResponse.json(
+      { error: 'No puedes resetear tu propia contraseña desde aquí' },
+      { status: 400 }
+    )
+  }
+
   const password = generatePassword()
   const passwordHash = await hashPassword(password)
 

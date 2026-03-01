@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getSessionUser, COOKIE_NAME, comparePassword, hashPassword } from '@/lib/auth'
+import { getSessionUser, COOKIE_NAME, comparePassword, hashPassword, validatePasswordComplexity } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logEvent } from '@/lib/audit'
 
@@ -17,8 +17,9 @@ export async function PATCH(request: Request) {
   if (!currentPassword || !newPassword) {
     return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
   }
-  if (newPassword.length < 8) {
-    return NextResponse.json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' }, { status: 400 })
+  const pwError = validatePasswordComplexity(newPassword)
+  if (pwError) {
+    return NextResponse.json({ error: pwError }, { status: 400 })
   }
 
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } })

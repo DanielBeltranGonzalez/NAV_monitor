@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, signToken, COOKIE_NAME } from '@/lib/auth'
+import { hashPassword, signToken, COOKIE_NAME, validatePasswordComplexity } from '@/lib/auth'
 import { logEvent } from '@/lib/audit'
 
 export async function POST(request: Request) {
@@ -10,11 +10,12 @@ export async function POST(request: Request) {
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
   }
-  if (!password || typeof password !== 'string' || password.length < 8) {
-    return NextResponse.json(
-      { error: 'La contraseña debe tener al menos 8 caracteres' },
-      { status: 400 }
-    )
+  if (!password || typeof password !== 'string') {
+    return NextResponse.json({ error: 'Contraseña requerida' }, { status: 400 })
+  }
+  const pwError = validatePasswordComplexity(password)
+  if (pwError) {
+    return NextResponse.json({ error: pwError }, { status: 400 })
   }
 
   const existing = await prisma.user.findUnique({ where: { email } })
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     httpOnly: true,
     sameSite: 'strict',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24, // 24 hours
   })
   return response
 }

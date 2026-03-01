@@ -199,6 +199,13 @@ describe('POST /api/admin/users/[id]/reset-password', () => {
     ;(prisma.user.update as jest.Mock).mockResolvedValue({ id: 2 })
   })
 
+  it('admin intenta resetear su propia contraseña → 400', async () => {
+    const res = await resetPassword(reqWithId('1', 'POST'), params('1')) as any
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/propia contraseña/)
+  })
+
   it('admin resetea contraseña → 200 con password', async () => {
     const res = await resetPassword(reqWithId('2', 'POST'), params('2')) as any
     expect(res.status).toBe(200)

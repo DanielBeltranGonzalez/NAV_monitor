@@ -12,9 +12,11 @@ model User {
   email        String       @unique
   passwordHash String
   role         String       @default("USER")
-  createdAt    DateTime     @default(now())
-  lastLoginAt  DateTime?
-  banks        Bank[]
+  createdAt      DateTime     @default(now())
+  lastLoginAt    DateTime?
+  loginAttempts  Int          @default(0)
+  lockedUntil    DateTime?
+  banks          Bank[]
   investments  Investment[]
 }
 

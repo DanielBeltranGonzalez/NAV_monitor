@@ -7,9 +7,22 @@ const SECRET = new TextEncoder().encode(
 )
 
 const COOKIE_NAME = 'session'
-const TOKEN_TTL = '7d'
+const TOKEN_TTL = '24h'
 
 // ── Password helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Returns an error message if the password doesn't meet complexity requirements,
+ * or null if it's valid.
+ * Rules: min 8 chars, at least one uppercase, one lowercase, one digit.
+ */
+export function validatePasswordComplexity(password: string): string | null {
+  if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres'
+  if (!/[A-Z]/.test(password)) return 'La contraseña debe incluir al menos una mayúscula'
+  if (!/[a-z]/.test(password)) return 'La contraseña debe incluir al menos una minúscula'
+  if (!/[0-9]/.test(password)) return 'La contraseña debe incluir al menos un número'
+  return null
+}
 
 export function hashPassword(password: string): Promise<string> {
   return bcryptjs.hash(password, 12)
