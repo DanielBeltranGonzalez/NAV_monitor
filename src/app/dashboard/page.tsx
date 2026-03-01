@@ -191,6 +191,15 @@ export default async function DashboardPage({
 
   const investments = await getDashboardData(selectedDate)
 
+  // Check date consistency: all current values should share the same date
+  const newestDate = investments.reduce<string>((best, inv) => {
+    const d = inv.current!.date.slice(0, 10)
+    return d > best ? d : best
+  }, '')
+  const dateOutliers = investments.filter(
+    (inv) => inv.current!.date.slice(0, 10) !== newestDate
+  )
+
   // Group by bank preserving order
   const bankGroups: Map<string, InvestmentData[]> = new Map()
   for (const inv of investments) {
@@ -204,6 +213,23 @@ export default async function DashboardPage({
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <DashboardDatePicker value={selectedDateStr} max={maxDateStr} />
       </div>
+
+      {dateOutliers.length > 0 && (
+        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <p className="font-semibold mb-1">
+            ⚠ Los siguientes valores no son de la fecha más reciente ({formatDate(newestDate)}):
+          </p>
+          <ul className="list-disc list-inside space-y-0.5">
+            {dateOutliers.map((inv) => (
+              <li key={inv.id}>
+                <span className="font-medium">{inv.name}</span>
+                {' '}({inv.bank})
+                {' '}— {formatDate(inv.current!.date)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {investments.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
