@@ -15,9 +15,10 @@ const navItems = [
 interface NavSidebarProps {
   userEmail?: string
   isAdmin?: boolean
+  lastLoginAt?: Date | null
 }
 
-export function NavSidebar({ userEmail, isAdmin }: NavSidebarProps) {
+export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -74,6 +75,11 @@ export function NavSidebar({ userEmail, isAdmin }: NavSidebarProps) {
       <div className="p-4 border-t border-slate-700 space-y-2">
         {userEmail && (
           <p className="text-slate-400 text-xs truncate" title={userEmail}>{userEmail}</p>
+        )}
+        {lastLoginAt && (
+          <p className="text-slate-500 text-xs">
+            Última sesión: {new Date(lastLoginAt).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </p>
         )}
         <button
           onClick={handleLogout}
