@@ -61,7 +61,13 @@ function csrfCheck(request: NextRequest): NextResponse | null {
   // If no Origin header present (e.g. same-origin curl/server-side), allow
   if (!origin) return null
 
-  const expected = request.nextUrl.origin
+  // Support reverse proxy / Docker port-mapping scenarios
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  const expected = forwardedHost
+    ? `${forwardedProto ?? request.nextUrl.protocol.replace(':', '')}://${forwardedHost}`
+    : request.nextUrl.origin
+
   if (origin !== expected) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
