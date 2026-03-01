@@ -6,7 +6,7 @@ const requests = new Map<string, { count: number; resetAt: number }>()
 const WINDOW_MS = 60_000 // 1 minute
 const MAX_REQUESTS = 120 // per window per IP
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   const now = Date.now()
