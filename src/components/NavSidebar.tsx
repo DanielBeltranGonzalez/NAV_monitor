@@ -158,7 +158,7 @@ export function NavSidebar({ userEmail, isAdmin, lastLoginAt }: NavSidebarProps)
           Cerrar sesión
         </button>
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v0.19.0</p>
+          <p>v1.0.3</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>
