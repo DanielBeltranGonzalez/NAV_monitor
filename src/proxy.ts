@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
+import { jwtVerify, SignJWT } from 'jose'
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 
@@ -49,6 +49,26 @@ function rateLimit(request: NextRequest): NextResponse | null {
   return null
 }
 
+// ── CSRF: Origin check for state-changing API requests ────────────────────────
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+function csrfCheck(request: NextRequest): NextResponse | null {
+  if (!MUTATING_METHODS.has(request.method)) return null
+  if (!request.nextUrl.pathname.startsWith('/api/')) return null
+
+  const origin = request.headers.get('origin')
+  // If no Origin header present (e.g. same-origin curl/server-side), allow
+  if (!origin) return null
+
+  const expected = request.nextUrl.origin
+  if (origin !== expected) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  return null
+}
+
 // ── Public routes (no auth required) ─────────────────────────────────────────
 
 const PUBLIC_PREFIXES = ['/auth/', '/api/auth/', '/_next/', '/favicon.ico']
@@ -66,6 +86,11 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'dev-secret-change-in-production'
 )
+
+const COOKIE_NAME = 'session'
+const SESSION_MAX_AGE = 60 * 60 * 24 // 24 hours in seconds
+// Renew session cookie when token is older than this threshold (1 hour)
+const RENEW_THRESHOLD_SECS = 3600
 
 // ── Security headers ───────────────────────────────────────────────────────
 
@@ -94,6 +119,10 @@ export async function proxy(request: NextRequest) {
     if (limited) return limited
   }
 
+  // CSRF check for mutating API requests
+  const csrfError = csrfCheck(request)
+  if (csrfError) return csrfError
+
   // Public routes bypass auth check
   if (isPublic(pathname)) return addSecurityHeaders(NextResponse.next())
 
@@ -118,7 +147,31 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    return addSecurityHeaders(NextResponse.next())
+    const response = addSecurityHeaders(NextResponse.next())
+
+    // Sliding window: renew session cookie if token is older than RENEW_THRESHOLD_SECS
+    const iat = typeof payload.iat === 'number' ? payload.iat : 0
+    const nowSecs = Math.floor(Date.now() / 1000)
+    if (nowSecs - iat > RENEW_THRESHOLD_SECS) {
+      const newToken = await new SignJWT({
+        sub: payload.sub,
+        email: payload.email,
+        role: payload.role,
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('24h')
+        .sign(SECRET)
+
+      response.cookies.set(COOKIE_NAME, newToken, {
+        httpOnly: true,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: SESSION_MAX_AGE,
+      })
+    }
+
+    return response
   } catch {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }

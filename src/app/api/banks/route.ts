@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
 
 export async function GET(request: Request) {
-  const user = await getSessionUser(request as any)
+  const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const banks = await prisma.bank.findMany({
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = await getSessionUser(request as any)
+  const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()

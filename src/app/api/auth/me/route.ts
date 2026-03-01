@@ -4,13 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { logEvent } from '@/lib/audit'
 
 export async function GET(request: Request) {
-  const user = await getSessionUser(request as any)
+  const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   return NextResponse.json({ id: user.id, email: user.email, role: user.role })
 }
 
 export async function PATCH(request: Request) {
-  const user = await getSessionUser(request as any)
+  const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { currentPassword, newPassword } = await request.json()
@@ -36,7 +36,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const user = await getSessionUser(request as any)
+  const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (user.role === 'ADMIN') {
