@@ -1,0 +1,17 @@
+# Next.js
+.next/
+out/
+node_modules/
+
+# Prisma DB (datos locales)
+prisma/prisma/nav.db
+prisma/prisma/nav.db-journal
+prisma/prisma/nav.db-shm
+prisma/prisma/nav.db-wal
+
+# Backups (opcionales en git)
+prisma/backups/
+
+# Env
+.env
+.env.local

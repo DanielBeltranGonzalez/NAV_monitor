@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bank {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  investments Investment[]
+}
+
+model Investment {
+  id        Int               @id @default(autoincrement())
+  name      String
+  bankId    Int
+  bank      Bank              @relation(fields: [bankId], references: [id])
+  createdAt DateTime          @default(now())
+  values    InvestmentValue[]
+}
+
+model InvestmentValue {
+  id           Int        @id @default(autoincrement())
+  investmentId Int
+  date         DateTime
+  value        Decimal
+  investment   Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  @@index([investmentId, date])
+}
