@@ -8,6 +8,7 @@ interface UserRow {
   email: string
   role: string
   createdAt: string
+  lastLoginAt: string | null
 }
 
 export default function AdminUsersPage() {
@@ -91,7 +92,8 @@ export default function AdminUsersPage() {
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="text-left px-4 py-3 font-semibold text-slate-600">Email</th>
               <th className="text-left px-4 py-3 font-semibold text-slate-600">Rol</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600">Fecha de registro</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600">Registro</th>
+              <th className="text-left px-4 py-3 font-semibold text-slate-600">Última conexión</th>
               <th className="text-left px-4 py-3 font-semibold text-slate-600">Contraseña temporal</th>
               <th className="text-right px-4 py-3 font-semibold text-slate-600">Acciones</th>
             </tr>
@@ -113,6 +115,9 @@ export default function AdminUsersPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-600">
                   {formatDate(new Date(u.createdAt))}
+                </td>
+                <td className="px-4 py-3 text-slate-600">
+                  {u.lastLoginAt ? formatDate(new Date(u.lastLoginAt)) : <span className="text-slate-400">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   {resetPasswords[u.id] && (

@@ -13,6 +13,7 @@ model User {
   passwordHash String
   role         String       @default("USER")
   createdAt    DateTime     @default(now())
+  lastLoginAt  DateTime?
   banks        Bank[]
   investments  Investment[]
 }

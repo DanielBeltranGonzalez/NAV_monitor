@@ -46,6 +46,7 @@ jest.mock('@/lib/prisma', () => ({
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn().mockResolvedValue({}),
       count: jest.fn().mockResolvedValue(1),
     },
   },
