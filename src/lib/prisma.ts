@@ -1,6 +1,6 @@
 import path from 'path'
 import { createClient } from '@libsql/client'
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { PrismaClient } from '@prisma/client'
 
 // Prisma resuelve file:./X relativo a prisma/ (donde está schema.prisma).
@@ -18,7 +18,7 @@ function createPrismaClient(): PrismaClient {
   const url = toLibSqlUrl(process.env.DATABASE_URL ?? 'file:./dev.db')
   const encryptionKey = process.env.DB_ENCRYPTION_KEY || undefined
   const libsql = createClient({ url, encryptionKey })
-  const adapter = new PrismaLibSQL(libsql)
+  const adapter = new PrismaLibSql(libsql)
   return new PrismaClient({ adapter })
 }
 
