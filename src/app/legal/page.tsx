@@ -37,11 +37,6 @@ export default function LegalPage() {
           La cuenta queda bloqueada temporalmente (15 minutos) tras 5 intentos de inicio de sesión
           fallidos consecutivos.
         </p>
-        <p className="text-sm text-slate-600">
-          La base de datos puede configurarse con cifrado AES-256 a nivel de archivo. Con esta
-          opción activa, el fichero de base de datos no es legible sin la clave de cifrado, incluso
-          si se accede directamente al disco o al volumen de almacenamiento.
-        </p>
       </section>
 
       <section className="space-y-3">

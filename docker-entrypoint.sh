@@ -2,12 +2,7 @@
 set -e
 
 echo "Aplicando migraciones de base de datos..."
-if [ -n "$DB_ENCRYPTION_KEY" ]; then
-  echo "  (BD cifrada — usando db:migrate:encrypted)"
-  npm run db:migrate:encrypted
-else
-  npx prisma migrate deploy
-fi
+npx prisma migrate deploy
 
 # Backup automático nocturno
 BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-7}

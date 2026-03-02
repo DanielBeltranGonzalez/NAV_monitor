@@ -1,7 +1,7 @@
 # NAV Monitor
 
 Aplicación web para registrar y visualizar el valor liquidativo (NAV) de tus inversiones.
-Construida con Next.js, libSQL (Prisma) y Tailwind CSS. Soporta cifrado AES-256 de la base de datos.
+Construida con Next.js, SQLite (Prisma) y Tailwind CSS.
 
 ---
 
@@ -22,20 +22,11 @@ Construida con Next.js, libSQL (Prisma) y Tailwind CSS. Soporta cifrado AES-256 
    |---|---|
    | `JWT_SECRET` | Cadena aleatoria larga y segura (ver nota) |
    | `HOST_PORT` | Puerto del host donde se expondrá la app (ej. `3000`) |
-   | `DB_ENCRYPTION_KEY` | Clave AES-256 para cifrar la BD (opcional, ver nota) |
 
    > **Cómo generar `JWT_SECRET`:**
    > ```bash
    > openssl rand -base64 48
    > ```
-
-   > **Cómo generar `DB_ENCRYPTION_KEY` (opcional pero recomendado en producción):**
-   > ```bash
-   > openssl rand -hex 32
-   > ```
-   > Si no se define, la base de datos queda sin cifrar. Si se define, el archivo `.db` queda
-   > protegido con AES-256: sin la clave, el fichero no es legible aunque alguien lo copie.
-   > **Una vez activado el cifrado, no cambies ni pierdas esta clave** o perderás acceso a los datos.
 
 5. Hacer clic en **Deploy the stack**.
 
@@ -155,25 +146,11 @@ Para restaurar un backup en un contenedor Docker en ejecución:
 
 ## Cifrado de la base de datos
 
-NAV Monitor soporta cifrado AES-256 a nivel de archivo mediante libSQL. Con el cifrado activo, el fichero `.db` no es legible sin la clave, aunque alguien tenga acceso físico al disco o al volumen Docker.
-
-### Activar el cifrado en una BD existente (migración one-shot)
-
-Si ya tienes datos y quieres cifrar la BD:
-
-```bash
-# Genera una clave (guárdala en un lugar seguro)
-export DB_ENCRYPTION_KEY=$(openssl rand -hex 32)
-
-# Convierte la BD existente a formato cifrado
-npx tsx scripts/db-to-encrypted.ts /data/nav.db /data/nav.enc.db
-
-# Sustituye la BD original
-mv /data/nav.db /data/nav.db.bak
-mv /data/nav.enc.db /data/nav.db
-
-# Añade DB_ENCRYPTION_KEY a las variables de entorno y reinicia el contenedor
-```
+> **Estado actual:** el cifrado AES-256 a nivel de archivo requiere actualizar Prisma a v7, lo que implica cambios de arquitectura significativos. Esta funcionalidad está **pendiente** para una versión futura.
+>
+> Los scripts `scripts/db-to-encrypted.ts` y `scripts/db-apply-migrations.ts` están disponibles en el repositorio como utilidades independientes, pero la aplicación **no puede abrir** una BD cifrada con la versión actual de Prisma (5.x).
+>
+> Mientras tanto, la protección de los datos en reposo puede realizarse a nivel de sistema operativo (cifrado del volumen Docker o del disco del servidor).
 
 ---
 
@@ -184,7 +161,6 @@ mv /data/nav.enc.db /data/nav.db
 | `JWT_SECRET` | Secreto para firmar los tokens de sesión. **Obligatorio cambiarlo.** | `dev-secret-change-in-production` |
 | `HOST_PORT` | Puerto del host donde se expone la aplicación | `3000` |
 | `DATABASE_URL` | Ruta a la base de datos SQLite | `file:/data/nav.db` |
-| `DB_ENCRYPTION_KEY` | Clave AES-256 para cifrado de la BD (hex de 32 bytes). Si no se define, la BD queda sin cifrar. | _(sin cifrado)_ |
 | `BACKUP_KEEP_DAYS` | Días de retención de backups automáticos | `7` |
 
 ---
@@ -196,7 +172,7 @@ mv /data/nav.enc.db /data/nav.db
 npm install
 
 # Configurar entorno
-cp .env.example .env   # editar JWT_SECRET (y opcionalmente DB_ENCRYPTION_KEY)
+cp .env.example .env   # editar JWT_SECRET
 
 # Aplicar migraciones y arrancar
 npm run db:migrate -- --name init
@@ -206,8 +182,7 @@ npm run dev
 Otros comandos útiles:
 
 ```bash
-npm run db:seed              # Cargar datos de prueba
-npm run db:studio            # Prisma Studio (interfaz visual de la BD, solo sin cifrado)
-npm run db:migrate:encrypted # Aplicar migraciones sobre una BD cifrada
-npm test                     # Ejecutar tests
+npm run db:seed    # Cargar datos de prueba
+npm run db:studio  # Prisma Studio (interfaz visual de la BD)
+npm test           # Ejecutar tests
 ```
