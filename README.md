@@ -5,21 +5,17 @@ Construida con Next.js, libSQL (Prisma) y Tailwind CSS. Soporta cifrado AES-256 
 
 ---
 
-## Despliegue en Portainer desde repositorio Git
+## Despliegue en Portainer
 
 ### Requisitos previos
 
 - Portainer CE/BE instalado y accesible.
-- Acceso al repositorio GitHub: `https://github.com/DanielBeltranGonzalez/NAV_monitor`
 
 ### Pasos
 
 1. En Portainer, ir a **Stacks → Add stack**.
-2. Seleccionar **Repository** como origen.
-3. Rellenar los campos:
-   - **Repository URL:** `https://github.com/DanielBeltranGonzalez/NAV_monitor`
-   - **Branch:** `main`
-   - **Compose path:** `docker-compose.yml`
+2. Seleccionar **Web editor** como origen.
+3. Pegar el contenido del fichero `docker-compose.yml` de este repositorio.
 4. En la sección **Environment variables**, añadir:
 
    | Variable | Valor |
@@ -43,7 +39,7 @@ Construida con Next.js, libSQL (Prisma) y Tailwind CSS. Soporta cifrado AES-256 
 
 5. Hacer clic en **Deploy the stack**.
 
-Portainer construirá la imagen, creará el volumen `nav_data` (donde vive la base de datos) y arrancará el contenedor.
+Portainer descargará la imagen desde Docker Hub, creará el volumen `nav_data` (donde vive la base de datos) y arrancará el contenedor.
 
 Al primer inicio, `docker-entrypoint.sh` ejecuta las migraciones automáticamente, creando el esquema de la base de datos.
 
@@ -51,20 +47,41 @@ Al primer inicio, `docker-entrypoint.sh` ejecuta las migraciones automáticament
 > El **primer usuario que se registre** en `/auth/register` recibirá automáticamente el rol **ADMIN**.
 > Regístrate con tu cuenta definitiva antes de compartir la URL con otros usuarios.
 
+### Alternativa: despliegue por línea de comandos
+
+```bash
+# Descargar el docker-compose.yml
+curl -O https://raw.githubusercontent.com/DanielBeltranGonzalez/NAV_monitor/main/docker-compose.yml
+
+# Crear .env con las variables necesarias
+cat > .env <<EOF
+JWT_SECRET=$(openssl rand -base64 48)
+HOST_PORT=3000
+# DB_ENCRYPTION_KEY=$(openssl rand -hex 32)   # descomentar para cifrar la BD
+EOF
+
+docker compose up -d
+```
+
 ---
 
 ## Actualización a una nueva versión
 
-Cuando se publica una nueva versión en `main`:
+Cuando se publica una nueva versión en Docker Hub:
 
 1. En Portainer, ir a **Stacks** y seleccionar el stack `nav-monitor`.
 2. Hacer clic en **Pull and redeploy**.
-3. Marcar la opción **Re-pull image** para que Portainer descargue el código actualizado y reconstruya la imagen.
-4. Confirmar con **Update the stack**.
+3. Confirmar con **Update the stack**.
 
-El contenedor se reiniciará con la nueva imagen. En el arranque, `docker-entrypoint.sh` aplicará automáticamente cualquier migración de base de datos pendiente antes de iniciar la aplicación.
+Portainer descargará la nueva imagen desde Docker Hub y reiniciará el contenedor. En el arranque, `docker-entrypoint.sh` aplicará automáticamente cualquier migración de base de datos pendiente.
 
 > **La base de datos no se pierde:** los datos residen en el volumen Docker `nav_data`, que es independiente del contenedor y persiste entre actualizaciones.
+
+### Alternativa: actualización por línea de comandos
+
+```bash
+docker compose pull && docker compose up -d
+```
 
 ---
 

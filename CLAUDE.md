@@ -9,12 +9,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Docker
 
+El modo de despliegue preferente es **imagen pre-construida desde Docker Hub** (no build en el servidor).
+
 Cuando el usuario diga **"prepara para portainer"**, genera o actualiza los dos ficheros siguientes adaptados al proyecto:
 
-**`Dockerfile`** — multi-stage (`deps` → `builder` → `runner`) sobre la imagen base adecuada. Usuario no-root. `EXPOSE` del puerto de la app. `CMD` para arrancar el servidor.
+**`Dockerfile`** — multi-stage (`deps` → `builder` → `runner`) sobre la imagen base adecuada. Usuario no-root. `EXPOSE` del puerto de la app. `CMD` para arrancar el servidor. (Se usa para construir y publicar la imagen en Docker Hub, no en el despliegue.)
 
 **`docker-compose.yml`** — con:
-- `build: .`
+- `image: <usuario-dockerhub>/<imagen>:latest` (nunca `build: .`)
 - `container_name`
 - `ports` usando `${HOST_PORT:-XXXX}:XXXX`
 - `environment` con las variables necesarias
