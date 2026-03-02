@@ -1,9 +1,12 @@
 import { Fragment } from 'react'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { DashboardRow } from '@/components/DashboardCard'
 import { DashboardChart } from '@/components/DashboardChart'
 import { DashboardDatePicker } from '@/components/DashboardDatePicker'
 import { formatEUR, formatChangePercent, formatDate } from '@/lib/formatters'
 import { prisma } from '@/lib/prisma'
+import { verifyToken, COOKIE_NAME } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,8 +116,9 @@ function TotalRow({ investments }: { investments: InvestmentData[] }) {
   )
 }
 
-async function getDashboardData(selectedDate: Date): Promise<InvestmentData[]> {
+async function getDashboardData(userId: number, selectedDate: Date): Promise<InvestmentData[]> {
   const investments = await prisma.investment.findMany({
+    where: { userId },
     orderBy: [{ bank: { name: 'asc' } }, { name: 'asc' }],
     include: {
       bank: true,
@@ -173,9 +177,16 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ date?: string }>
 }) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(COOKIE_NAME)?.value
+  const payload = token ? await verifyToken(token) : null
+  if (!payload) redirect('/auth/login')
+  const userId = Number(payload.sub)
+
   const params = await searchParams
 
   const latestValue = await prisma.investmentValue.findFirst({
+    where: { investment: { userId } },
     orderBy: { date: 'desc' },
     select: { date: true },
   })
@@ -189,7 +200,7 @@ export default async function DashboardPage({
   // Parse as UTC midnight to match stored dates
   const selectedDate = new Date(`${selectedDateStr}T23:59:59.999Z`)
 
-  const investments = await getDashboardData(selectedDate)
+  const investments = await getDashboardData(userId, selectedDate)
 
   // Inversiones activas (valor > 0) para mostrar en la tabla
   const displayInvestments = investments.filter((inv) => Number(inv.current?.value) !== 0)
