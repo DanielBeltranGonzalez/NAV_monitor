@@ -35,7 +35,7 @@ export function NavSidebar({ isAdmin }: NavSidebarProps) {
   }, [isAdmin, pathname])
 
   return (
-    <aside className="w-64 min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+    <aside className="w-64 h-screen sticky top-0 shrink-0 bg-slate-900 text-slate-100 flex flex-col overflow-y-auto">
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-6 w-6 text-emerald-400" />
