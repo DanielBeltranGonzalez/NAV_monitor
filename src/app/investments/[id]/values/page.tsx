@@ -1,9 +1,12 @@
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
 import { ValueTable } from '@/components/ValueTable'
 import { ChevronLeft } from 'lucide-react'
+import { verifyToken, COOKIE_NAME } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,12 +15,18 @@ export default async function ValuesPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(COOKIE_NAME)?.value
+  const payload = token ? await verifyToken(token) : null
+  if (!payload) redirect('/auth/login')
+  const userId = Number(payload.sub)
+
   const { id: rawId } = await params
   const id = parseInt(rawId)
   if (isNaN(id)) notFound()
 
   const investment = await prisma.investment.findUnique({
-    where: { id },
+    where: { id, userId },
     include: {
       bank: true,
       values: { orderBy: { date: 'desc' } },

@@ -1,21 +1,31 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
 import { InvestmentTable } from '@/components/InvestmentTable'
 import { PlusCircle } from 'lucide-react'
+import { verifyToken, COOKIE_NAME } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 export default async function InvestmentsPage() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(COOKIE_NAME)?.value
+  const payload = token ? await verifyToken(token) : null
+  if (!payload) redirect('/auth/login')
+  const userId = Number(payload.sub)
+
   const [investments, banks] = await Promise.all([
     prisma.investment.findMany({
+      where: { userId },
       orderBy: [{ bank: { name: 'asc' } }, { name: 'asc' }],
       include: {
         bank: true,
         values: { orderBy: { date: 'desc' }, take: 1 },
       },
     }),
-    prisma.bank.findMany({ orderBy: { name: 'asc' } }),
+    prisma.bank.findMany({ where: { userId }, orderBy: { name: 'asc' } }),
   ])
 
   return (
