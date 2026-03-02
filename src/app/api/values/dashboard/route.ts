@@ -21,7 +21,11 @@ export async function GET(request: Request) {
     const values = inv.values // already sorted DESC by date
 
     const current = values[0] ?? null
-    const previous = values[1] ?? null
+    const currentDateMs = current ? new Date(current.date).getTime() : 0
+    const previous =
+      current
+        ? values.slice(1).find((v) => new Date(v.date).getTime() < currentDateMs) ?? null
+        : null
 
     // Reference date: current value's date (or today)
     const refDate = current ? new Date(current.date) : new Date()

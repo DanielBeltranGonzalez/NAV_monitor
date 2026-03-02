@@ -212,11 +212,16 @@ async function getDashboardData(userId: number, selectedDate: Date): Promise<Inv
 
   return investments.flatMap((inv) => {
     const values = inv.values
-    const current = values.find((v) => new Date(v.date) <= selectedDate) ?? null
+    const currentIndex = values.findIndex((v) => new Date(v.date) <= selectedDate)
+    const current = currentIndex >= 0 ? values[currentIndex] : null
 
     if (!current || Number(current.value) === 0) return []
 
-    const previous = values[1] ?? null
+    const currentDateMs = new Date(current.date).getTime()
+    const previous =
+      values.slice(currentIndex + 1).find(
+        (v) => new Date(v.date).getTime() < currentDateMs
+      ) ?? null
 
     const refDate = current ? new Date(current.date) : new Date()
     const refMonth = refDate.getUTCMonth()

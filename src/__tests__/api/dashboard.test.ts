@@ -105,6 +105,20 @@ describe('GET /api/values/dashboard', () => {
     expect(data[0].prevYear.id).toBe(1)
   })
 
+  it('previous no incluye valores con la misma fecha que current', async () => {
+    // Simula dos entradas el mismo día: previous debe ser null, no el duplicado
+    const values = [
+      makeValue(2, '2024-06-15', '1000'), // current
+      makeValue(1, '2024-06-15', '1000'), // mismo día → no debe usarse como previous
+    ]
+    ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([makeInvestment(values)])
+
+    const res = await GET(new Request('http://localhost/api/values/dashboard')) as any
+    const data = await res.json()
+
+    expect(data[0].previous).toBeNull()
+  })
+
   it('devuelve array vacío si no hay inversiones', async () => {
     ;(prisma.investment.findMany as jest.Mock).mockResolvedValue([])
 
