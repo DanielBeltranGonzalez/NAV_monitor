@@ -26,10 +26,12 @@ interface InvestmentData {
   prevYear: ValueSnapshot | null
 }
 
+type DiffResult = { diff: number; pct: number; days: number } | null
+
 function sumDiff(
   investments: InvestmentData[],
   key: 'previous' | 'prevMonth' | 'prevYear'
-): { diff: number; pct: number; days: number } | null {
+): DiffResult {
   let sumCurrent = 0
   let sumRef = 0
   let totalDays = 0
@@ -48,7 +50,88 @@ function sumDiff(
   return { diff: sumCurrent - sumRef, pct, days: totalDays / count }
 }
 
-function DiffSumCell({ result }: { result: { diff: number; pct: number; days: number } | null }) {
+// Calcula los totales del portfolio usando la misma lógica que el chart API:
+// para cada fecha de referencia, suma el valor más reciente de CADA inversión
+// en o antes de esa fecha (incluyendo inversiones ahora cerradas).
+async function getChartTotals(userId: number, selectedDate: Date): Promise<{
+  currentTotal: number
+  prev: DiffResult
+  prevMonth: DiffResult
+  prevYear: DiffResult
+}> {
+  const selectedDateStr = selectedDate.toISOString().slice(0, 10)
+
+  const invs = await prisma.investment.findMany({
+    where: { userId },
+    select: {
+      values: {
+        select: { date: true, value: true },
+        orderBy: { date: 'asc' },
+      },
+    },
+  })
+
+  // Todas las fechas únicas con valores en o antes de la fecha seleccionada
+  const allDates = new Set<string>()
+  for (const inv of invs) {
+    for (const v of inv.values) {
+      const d = new Date(v.date).toISOString().slice(0, 10)
+      if (d <= selectedDateStr) allDates.add(d)
+    }
+  }
+
+  const sorted = Array.from(allDates).sort()
+  if (sorted.length === 0) return { currentTotal: 0, prev: null, prevMonth: null, prevYear: null }
+
+  // Total del portfolio en una fecha dada (igual que el chart)
+  function totalAt(dateStr: string): number {
+    let t = 0
+    for (const inv of invs) {
+      const latest = [...inv.values]
+        .filter((v) => new Date(v.date).toISOString().slice(0, 10) <= dateStr)
+        .pop()
+      if (latest) t += Number(latest.value)
+    }
+    return Math.round(t * 100) / 100
+  }
+
+  const currentDateStr = sorted[sorted.length - 1]
+  const currentTotal = totalAt(currentDateStr)
+  const [currentYear, currentMonth] = currentDateStr.split('-').map(Number)
+
+  // Fecha anterior: el punto inmediatamente anterior en el chart
+  const prevDate = sorted.length >= 2 ? sorted[sorted.length - 2] : null
+
+  // Fecha mes anterior: el punto más reciente en un mes anterior
+  const prevMonthDate =
+    [...sorted].reverse().find((d) => {
+      const [y, m] = d.split('-').map(Number)
+      return y < currentYear || (y === currentYear && m < currentMonth)
+    }) ?? null
+
+  // Fecha año anterior: el punto más reciente en un año anterior
+  const prevYearDate =
+    [...sorted].reverse().find((d) => Number(d.split('-')[0]) < currentYear) ?? null
+
+  function makeDiff(refDate: string | null): DiffResult {
+    if (!refDate) return null
+    const refTotal = totalAt(refDate)
+    const diff = currentTotal - refTotal
+    const pct = refTotal !== 0 ? (diff / refTotal) * 100 : 0
+    const days =
+      (new Date(currentDateStr).getTime() - new Date(refDate).getTime()) / 86_400_000
+    return { diff, pct, days }
+  }
+
+  return {
+    currentTotal,
+    prev: makeDiff(prevDate),
+    prevMonth: makeDiff(prevMonthDate),
+    prevYear: makeDiff(prevYearDate),
+  }
+}
+
+function DiffSumCell({ result }: { result: DiffResult }) {
   if (result === null) return <span className="text-muted-foreground">—</span>
   const colorClass = result.diff >= 0 ? 'text-emerald-600' : 'text-red-500'
   const annualizedPct =
@@ -88,29 +171,28 @@ function SubtotalRow({ bank, investments }: { bank: string; investments: Investm
   )
 }
 
-function TotalRow({ investments }: { investments: InvestmentData[] }) {
-  const nav = investments.reduce((s, inv) => s + (inv.current ? parseFloat(inv.current.value) : 0), 0)
-  const diffPrev = sumDiff(investments, 'previous')
-  const diffMonth = sumDiff(investments, 'prevMonth')
-  const diffYear = sumDiff(investments, 'prevYear')
-
+function TotalRow({
+  chartTotals,
+}: {
+  chartTotals: Awaited<ReturnType<typeof getChartTotals>>
+}) {
   return (
     <tr className="bg-slate-800 dark:bg-slate-950 text-white">
       <td className="px-4 py-3 font-bold" colSpan={2}>
         Total portfolio
       </td>
       <td className="px-4 py-3 text-right tabular-nums font-bold text-lg">
-        {formatEUR(nav)}
+        {formatEUR(chartTotals.currentTotal)}
       </td>
       <td className="px-4 py-3" />
       <td className="px-4 py-3 text-right text-sm">
-        <DiffSumCell result={diffPrev} />
+        <DiffSumCell result={chartTotals.prev} />
       </td>
       <td className="px-4 py-3 text-right text-sm">
-        <DiffSumCell result={diffMonth} />
+        <DiffSumCell result={chartTotals.prevMonth} />
       </td>
       <td className="px-4 py-3 text-right text-sm">
-        <DiffSumCell result={diffYear} />
+        <DiffSumCell result={chartTotals.prevYear} />
       </td>
     </tr>
   )
@@ -132,7 +214,7 @@ async function getDashboardData(userId: number, selectedDate: Date): Promise<Inv
     const values = inv.values
     const current = values.find((v) => new Date(v.date) <= selectedDate) ?? null
 
-    if (!current) return []
+    if (!current || Number(current.value) === 0) return []
 
     const previous = values[1] ?? null
 
@@ -196,36 +278,25 @@ export default async function DashboardPage({
     : new Date().toISOString().slice(0, 10)
 
   const selectedDateStr = params.date ?? maxDateStr
-
-  // Parse as UTC midnight to match stored dates
   const selectedDate = new Date(`${selectedDateStr}T23:59:59.999Z`)
 
-  const investments = await getDashboardData(userId, selectedDate)
+  const [investments, chartTotals] = await Promise.all([
+    getDashboardData(userId, selectedDate),
+    getChartTotals(userId, selectedDate),
+  ])
 
-  // Inversiones activas (valor > 0) para mostrar en la tabla
-  const displayInvestments = investments.filter((inv) => Number(inv.current?.value) !== 0)
-
-  // Check date consistency: only among active investments
-  const newestDate = displayInvestments.reduce<string>((best, inv) => {
+  const newestDate = investments.reduce<string>((best, inv) => {
     const d = inv.current!.date.slice(0, 10)
     return d > best ? d : best
   }, '')
-  const dateOutliers = displayInvestments.filter(
+  const dateOutliers = investments.filter(
     (inv) => inv.current!.date.slice(0, 10) !== newestDate
   )
 
-  // Group by bank preserving order (solo activas para filas visibles)
   const bankGroups: Map<string, InvestmentData[]> = new Map()
-  for (const inv of displayInvestments) {
+  for (const inv of investments) {
     if (!bankGroups.has(inv.bank)) bankGroups.set(inv.bank, [])
     bankGroups.get(inv.bank)!.push(inv)
-  }
-
-  // Todas las inversiones por banco (incluyendo cerradas) para cálculos de subtotal
-  const bankAllGroups: Map<string, InvestmentData[]> = new Map()
-  for (const inv of investments) {
-    if (!bankAllGroups.has(inv.bank)) bankAllGroups.set(inv.bank, [])
-    bankAllGroups.get(inv.bank)!.push(inv)
   }
 
   return (
@@ -252,7 +323,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {displayInvestments.length === 0 ? (
+      {investments.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           No investments yet. Add some from the Investments section.
         </div>
@@ -286,11 +357,11 @@ export default async function DashboardPage({
                     />
                   ))}
                   {bankGroups.size > 1 && (
-                    <SubtotalRow bank={bank} investments={bankAllGroups.get(bank)!} />
+                    <SubtotalRow bank={bank} investments={rows} />
                   )}
                 </Fragment>
               ))}
-              <TotalRow investments={investments} />
+              <TotalRow chartTotals={chartTotals} />
             </tbody>
           </table>
           </div>
