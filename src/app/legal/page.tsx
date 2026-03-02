@@ -29,18 +29,28 @@ export default function LegalPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-700">3. Seguridad</h2>
         <p className="text-sm text-slate-600">
-          Las contraseñas se almacenan cifradas mediante bcrypt. Las sesiones se gestionan mediante
-          tokens JWT con expiración de 7 días. La aplicación es de acceso restringido mediante
-          credenciales de usuario.
+          Las contraseñas se almacenan cifradas mediante bcrypt (factor de coste 12). Las sesiones
+          se gestionan mediante tokens JWT con expiración de 24 horas, almacenados en una cookie
+          httpOnly con atributo SameSite=Strict.
+        </p>
+        <p className="text-sm text-slate-600">
+          La cuenta queda bloqueada temporalmente (15 minutos) tras 5 intentos de inicio de sesión
+          fallidos consecutivos.
+        </p>
+        <p className="text-sm text-slate-600">
+          La base de datos puede configurarse con cifrado AES-256 a nivel de archivo. Con esta
+          opción activa, el fichero de base de datos no es legible sin la clave de cifrado, incluso
+          si se accede directamente al disco o al volumen de almacenamiento.
         </p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-700">4. Derechos del usuario</h2>
         <p className="text-sm text-slate-600">
-          El usuario puede solicitar la eliminación de su cuenta y todos los datos asociados
-          en cualquier momento desde la configuración de su perfil. Tras la eliminación, los datos
-          no son recuperables.
+          El usuario puede exportar todos sus datos financieros en formato CSV desde la sección
+          de inversiones. También puede eliminar su cuenta y todos los datos asociados en cualquier
+          momento desde la configuración de su perfil. Tras la eliminación, los datos no son
+          recuperables.
         </p>
       </section>
 
