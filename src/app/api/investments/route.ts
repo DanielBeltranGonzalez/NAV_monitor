@@ -38,6 +38,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Bank is required' }, { status: 400 })
   }
 
+  const bank = await prisma.bank.findUnique({ where: { id: Number(bankId) } })
+  if (!bank || bank.userId !== user.id) {
+    return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
+  }
+
   const investment = await prisma.investment.create({
     data: { name: trimmedName, bankId: Number(bankId), userId: user.id },
     include: { bank: true },

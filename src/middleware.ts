@@ -83,7 +83,7 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 
-// ── Proxy (middleware) ────────────────────────────────────────────────────────
+// ── Middleware ────────────────────────────────────────────────────────────────
 
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required in production')
@@ -116,7 +116,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rate limit all /api/* routes

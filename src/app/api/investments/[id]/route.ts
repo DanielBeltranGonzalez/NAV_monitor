@@ -25,7 +25,13 @@ export async function PATCH(
       )
     data.name = trimmedName
   }
-  if (bankId) data.bankId = Number(bankId)
+  if (bankId) {
+    const bank = await prisma.bank.findUnique({ where: { id: Number(bankId) } })
+    if (!bank || bank.userId !== user.id) {
+      return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
+    }
+    data.bankId = Number(bankId)
+  }
   if (Object.keys(data).length === 0)
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
 

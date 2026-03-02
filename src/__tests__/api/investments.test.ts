@@ -34,6 +34,9 @@ jest.mock('@/lib/prisma', () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    bank: {
+      findUnique: jest.fn(),
+    },
   },
 }))
 
@@ -94,6 +97,7 @@ describe('POST /api/investments', () => {
   })
 
   it('crea inversión válida → 201', async () => {
+    ;(prisma.bank.findUnique as jest.Mock).mockResolvedValue({ id: 2, userId: 1 })
     ;(prisma.investment.create as jest.Mock).mockResolvedValue(fakeInvestment)
 
     const res = await POST(req({ name: 'Fondo A', bankId: 2 })) as any

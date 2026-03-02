@@ -13,6 +13,7 @@ export async function PATCH(
 
   const { id } = await params
   const targetId = Number(id)
+  if (isNaN(targetId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   if (targetId === user.id) {
     return NextResponse.json({ error: 'No puedes cambiar tu propio rol' }, { status: 400 })
@@ -54,6 +55,7 @@ export async function DELETE(
 
   const { id } = await params
   const targetId = Number(id)
+  if (isNaN(targetId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   if (targetId === user.id) {
     return NextResponse.json({ error: 'No puedes eliminarte a ti mismo' }, { status: 400 })

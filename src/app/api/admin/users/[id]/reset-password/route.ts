@@ -21,6 +21,7 @@ export async function POST(
 
   const { id } = await params
   const targetId = Number(id)
+  if (isNaN(targetId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   if (targetId === user.id) {
     return NextResponse.json(
