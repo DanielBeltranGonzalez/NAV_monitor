@@ -116,7 +116,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rate limit all /api/* routes
