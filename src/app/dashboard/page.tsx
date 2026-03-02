@@ -128,7 +128,7 @@ async function getDashboardData(selectedDate: Date): Promise<InvestmentData[]> {
     const values = inv.values
     const current = values.find((v) => new Date(v.date) <= selectedDate) ?? null
 
-    if (!current || Number(current.value) === 0) return []
+    if (!current) return []
 
     const previous = values[1] ?? null
 
@@ -191,20 +191,30 @@ export default async function DashboardPage({
 
   const investments = await getDashboardData(selectedDate)
 
-  // Check date consistency: all current values should share the same date
-  const newestDate = investments.reduce<string>((best, inv) => {
+  // Inversiones activas (valor > 0) para mostrar en la tabla
+  const displayInvestments = investments.filter((inv) => Number(inv.current?.value) !== 0)
+
+  // Check date consistency: only among active investments
+  const newestDate = displayInvestments.reduce<string>((best, inv) => {
     const d = inv.current!.date.slice(0, 10)
     return d > best ? d : best
   }, '')
-  const dateOutliers = investments.filter(
+  const dateOutliers = displayInvestments.filter(
     (inv) => inv.current!.date.slice(0, 10) !== newestDate
   )
 
-  // Group by bank preserving order
+  // Group by bank preserving order (solo activas para filas visibles)
   const bankGroups: Map<string, InvestmentData[]> = new Map()
-  for (const inv of investments) {
+  for (const inv of displayInvestments) {
     if (!bankGroups.has(inv.bank)) bankGroups.set(inv.bank, [])
     bankGroups.get(inv.bank)!.push(inv)
+  }
+
+  // Todas las inversiones por banco (incluyendo cerradas) para cálculos de subtotal
+  const bankAllGroups: Map<string, InvestmentData[]> = new Map()
+  for (const inv of investments) {
+    if (!bankAllGroups.has(inv.bank)) bankAllGroups.set(inv.bank, [])
+    bankAllGroups.get(inv.bank)!.push(inv)
   }
 
   return (
@@ -231,7 +241,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {investments.length === 0 ? (
+      {displayInvestments.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           No investments yet. Add some from the Investments section.
         </div>
@@ -265,7 +275,7 @@ export default async function DashboardPage({
                     />
                   ))}
                   {bankGroups.size > 1 && (
-                    <SubtotalRow bank={bank} investments={rows} />
+                    <SubtotalRow bank={bank} investments={bankAllGroups.get(bank)!} />
                   )}
                 </Fragment>
               ))}
