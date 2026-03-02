@@ -1,7 +1,7 @@
 # NAV Monitor
 
 Aplicación web para registrar y visualizar el valor liquidativo (NAV) de tus inversiones.
-Construida con Next.js, SQLite (Prisma) y Tailwind CSS.
+Construida con Next.js, libSQL (Prisma) y Tailwind CSS. Soporta cifrado AES-256 de la base de datos.
 
 ---
 
@@ -26,17 +26,26 @@ Construida con Next.js, SQLite (Prisma) y Tailwind CSS.
    |---|---|
    | `JWT_SECRET` | Cadena aleatoria larga y segura (ver nota) |
    | `HOST_PORT` | Puerto del host donde se expondrá la app (ej. `3000`) |
+   | `DB_ENCRYPTION_KEY` | Clave AES-256 para cifrar la BD (opcional, ver nota) |
 
    > **Cómo generar `JWT_SECRET`:**
    > ```bash
    > openssl rand -base64 48
    > ```
 
+   > **Cómo generar `DB_ENCRYPTION_KEY` (opcional pero recomendado en producción):**
+   > ```bash
+   > openssl rand -hex 32
+   > ```
+   > Si no se define, la base de datos queda sin cifrar. Si se define, el archivo `.db` queda
+   > protegido con AES-256: sin la clave, el fichero no es legible aunque alguien lo copie.
+   > **Una vez activado el cifrado, no cambies ni pierdas esta clave** o perderás acceso a los datos.
+
 5. Hacer clic en **Deploy the stack**.
 
 Portainer construirá la imagen, creará el volumen `nav_data` (donde vive la base de datos) y arrancará el contenedor.
 
-Al primer inicio, `docker-entrypoint.sh` ejecuta `prisma migrate deploy` automáticamente, creando el esquema de la base de datos.
+Al primer inicio, `docker-entrypoint.sh` ejecuta las migraciones automáticamente, creando el esquema de la base de datos.
 
 > **La base de datos arranca vacía.** No hay ningún usuario precreado.
 > El **primer usuario que se registre** en `/auth/register` recibirá automáticamente el rol **ADMIN**.
@@ -61,27 +70,26 @@ El contenedor se reiniciará con la nueva imagen. En el arranque, `docker-entryp
 
 ## Migraciones de base de datos
 
-Las migraciones se gestionan con **Prisma Migrate** y se aplican **automáticamente en cada arranque** del contenedor mediante el comando:
+Las migraciones se aplican **automáticamente en cada arranque** del contenedor.
 
-```sh
-npx prisma migrate deploy
-```
+- **Sin `DB_ENCRYPTION_KEY`:** se usa `prisma migrate deploy` (driver SQLite nativo).
+- **Con `DB_ENCRYPTION_KEY`:** se usa `npm run db:migrate:encrypted` (driver libSQL cifrado).
 
-Este comando aplica solo las migraciones pendientes que aún no se hayan ejecutado en la base de datos, por lo que es seguro ejecutarlo en cada inicio.
-
-### ¿Cuándo hay migraciones pendientes?
-
-Cada vez que una nueva versión modifica el esquema de la base de datos, incluye el fichero de migración correspondiente en `prisma/migrations/`. Al actualizar el stack (ver sección anterior), las migraciones se aplican solas al reiniciar el contenedor.
+El script de arranque detecta automáticamente cuál usar según la presencia de la variable.
 
 ### Aplicar una migración manualmente (si fuera necesario)
 
-Si por algún motivo fuera necesario aplicar la migración a mano:
-
+**Sin cifrado:**
 ```bash
 docker exec -it nav-monitor npx prisma migrate deploy
 ```
 
-### Consultar el estado de las migraciones
+**Con cifrado:**
+```bash
+docker exec -it nav-monitor npm run db:migrate:encrypted
+```
+
+### Consultar el estado de las migraciones (solo sin cifrado)
 
 ```bash
 docker exec -it nav-monitor npx prisma migrate status
@@ -89,7 +97,7 @@ docker exec -it nav-monitor npx prisma migrate status
 
 ### Acceder a la base de datos (solo para diagnóstico)
 
-Los datos están en el volumen `nav_data`. Para inspeccionarlos se puede ejecutar Prisma Studio temporalmente:
+Los datos están en el volumen `nav_data`. Para inspeccionarlos se puede ejecutar Prisma Studio temporalmente (requiere BD sin cifrar):
 
 ```bash
 docker exec -it nav-monitor npx prisma studio
@@ -109,6 +117,8 @@ En entornos Docker, el contenedor ejecuta automáticamente una copia de segurida
 
 El número de días de retención es configurable mediante la variable de entorno `BACKUP_KEEP_DAYS` (por defecto: 7 días).
 
+> **Nota:** si la BD está cifrada, los backups también lo estarán. Asegúrate de guardar `DB_ENCRYPTION_KEY` en un lugar seguro.
+
 ### Restaurar un backup
 
 Para restaurar un backup en un contenedor Docker en ejecución:
@@ -126,6 +136,30 @@ Para restaurar un backup en un contenedor Docker en ejecución:
 
 ---
 
+## Cifrado de la base de datos
+
+NAV Monitor soporta cifrado AES-256 a nivel de archivo mediante libSQL. Con el cifrado activo, el fichero `.db` no es legible sin la clave, aunque alguien tenga acceso físico al disco o al volumen Docker.
+
+### Activar el cifrado en una BD existente (migración one-shot)
+
+Si ya tienes datos y quieres cifrar la BD:
+
+```bash
+# Genera una clave (guárdala en un lugar seguro)
+export DB_ENCRYPTION_KEY=$(openssl rand -hex 32)
+
+# Convierte la BD existente a formato cifrado
+npx tsx scripts/db-to-encrypted.ts /data/nav.db /data/nav.enc.db
+
+# Sustituye la BD original
+mv /data/nav.db /data/nav.db.bak
+mv /data/nav.enc.db /data/nav.db
+
+# Añade DB_ENCRYPTION_KEY a las variables de entorno y reinicia el contenedor
+```
+
+---
+
 ## Variables de entorno
 
 | Variable | Descripción | Por defecto |
@@ -133,6 +167,7 @@ Para restaurar un backup en un contenedor Docker en ejecución:
 | `JWT_SECRET` | Secreto para firmar los tokens de sesión. **Obligatorio cambiarlo.** | `dev-secret-change-in-production` |
 | `HOST_PORT` | Puerto del host donde se expone la aplicación | `3000` |
 | `DATABASE_URL` | Ruta a la base de datos SQLite | `file:/data/nav.db` |
+| `DB_ENCRYPTION_KEY` | Clave AES-256 para cifrado de la BD (hex de 32 bytes). Si no se define, la BD queda sin cifrar. | _(sin cifrado)_ |
 | `BACKUP_KEEP_DAYS` | Días de retención de backups automáticos | `7` |
 
 ---
@@ -144,7 +179,7 @@ Para restaurar un backup en un contenedor Docker en ejecución:
 npm install
 
 # Configurar entorno
-cp .env.example .env   # editar JWT_SECRET
+cp .env.example .env   # editar JWT_SECRET (y opcionalmente DB_ENCRYPTION_KEY)
 
 # Aplicar migraciones y arrancar
 npm run db:migrate -- --name init
@@ -154,7 +189,8 @@ npm run dev
 Otros comandos útiles:
 
 ```bash
-npm run db:seed    # Cargar datos de prueba
-npm run db:studio  # Prisma Studio (interfaz visual de la BD)
-npm test           # Ejecutar tests
+npm run db:seed              # Cargar datos de prueba
+npm run db:studio            # Prisma Studio (interfaz visual de la BD, solo sin cifrado)
+npm run db:migrate:encrypted # Aplicar migraciones sobre una BD cifrada
+npm test                     # Ejecutar tests
 ```
