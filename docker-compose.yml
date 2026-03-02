@@ -1,6 +1,6 @@
 services:
   nav-monitor:
-    build: .
+    image: tacombel/nav-monitor:latest
     container_name: nav-monitor
     restart: unless-stopped
     ports:
