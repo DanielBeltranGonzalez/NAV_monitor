@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { name, bankId } = body
+  const { name, bankId, comment } = body
 
   const trimmedName = typeof name === 'string' ? name.trim() : ''
   if (!trimmedName || trimmedName.length > 255) {
@@ -38,13 +38,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Bank is required' }, { status: 400 })
   }
 
+  const trimmedComment = typeof comment === 'string' ? comment.trim().slice(0, 1000) : null
+
   const bank = await prisma.bank.findUnique({ where: { id: Number(bankId) } })
   if (!bank || bank.userId !== user.id) {
     return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
   }
 
   const investment = await prisma.investment.create({
-    data: { name: trimmedName, bankId: Number(bankId), userId: user.id },
+    data: { name: trimmedName, bankId: Number(bankId), userId: user.id, comment: trimmedComment || null },
     include: { bank: true },
   })
   return NextResponse.json(investment, { status: 201 })

@@ -35,6 +35,7 @@ model Bank {
 model Investment {
   id        Int               @id @default(autoincrement())
   name      String
+  comment   String?
   bankId    Int
   userId    Int
   bank      Bank              @relation(fields: [bankId], references: [id], onDelete: Cascade)

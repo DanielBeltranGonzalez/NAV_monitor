@@ -23,6 +23,7 @@ export function InvestmentForm({ banks }: { banks: Bank[] }) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [bankId, setBankId] = useState('')
+  const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,7 +35,7 @@ export function InvestmentForm({ banks }: { banks: Bank[] }) {
     const res = await fetch('/api/investments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, bankId: Number(bankId) }),
+      body: JSON.stringify({ name, bankId: Number(bankId), comment: comment.trim() || undefined }),
     })
 
     if (!res.ok) {
@@ -88,6 +89,18 @@ export function InvestmentForm({ banks }: { banks: Bank[] }) {
                 </SelectContent>
               </Select>
             )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="comment">Comentario (opcional)</Label>
+            <textarea
+              id="comment"
+              rows={2}
+              maxLength={1000}
+              placeholder="Estrategia, notas personales…"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex gap-2">

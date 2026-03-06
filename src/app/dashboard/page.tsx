@@ -20,6 +20,7 @@ interface InvestmentData {
   id: number
   name: string
   bank: string
+  comment: string | null
   current: ValueSnapshot | null
   previous: ValueSnapshot | null
   prevMonth: ValueSnapshot | null
@@ -234,6 +235,7 @@ async function getDashboardData(userId: number, selectedDate: Date): Promise<Inv
       id: inv.id,
       name: inv.name,
       bank: inv.bank.name,
+      comment: inv.comment,
       current: current
         ? { id: current.id, date: current.date.toISOString(), value: String(current.value) }
         : null,
@@ -348,6 +350,7 @@ export default async function DashboardPage({
                       key={inv.id}
                       name={inv.name}
                       bank={inv.bank}
+                      comment={inv.comment}
                       current={inv.current}
                       previous={inv.previous}
                       prevMonth={inv.prevMonth}

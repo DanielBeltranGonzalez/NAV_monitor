@@ -9,6 +9,7 @@ interface ValueSnapshot {
 interface DashboardRowProps {
   name: string
   bank: string
+  comment?: string | null
   current: ValueSnapshot | null
   previous: ValueSnapshot | null
   prevMonth: ValueSnapshot | null
@@ -57,6 +58,7 @@ function DiffCell({
 export function DashboardRow({
   name,
   bank,
+  comment,
   current,
   previous,
   prevMonth,
@@ -64,7 +66,12 @@ export function DashboardRow({
 }: DashboardRowProps) {
   return (
     <tr className="border-b hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-      <td className="px-4 py-3 font-medium">{name}</td>
+      <td className="px-4 py-3 font-medium">
+        {name}
+        {comment && (
+          <span title={comment} className="ml-1.5 text-slate-400 cursor-help text-xs align-middle">ⓘ</span>
+        )}
+      </td>
       <td className="px-4 py-3 text-muted-foreground text-sm">{bank}</td>
       <td className="px-4 py-3 text-right tabular-nums font-semibold">
         {current ? formatEUR(parseFloat(current.value)) : '—'}

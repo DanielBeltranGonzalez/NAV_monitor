@@ -14,8 +14,9 @@ export async function PATCH(
   const id = parseInt(rawId)
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
-  const { name, bankId } = await request.json()
-  const data: { name?: string; bankId?: number } = {}
+  const body = await request.json()
+  const { name, bankId, comment } = body
+  const data: { name?: string; bankId?: number; comment?: string | null } = {}
   const trimmedName = typeof name === 'string' ? name.trim() : ''
   if (trimmedName) {
     if (trimmedName.length > 255)
@@ -31,6 +32,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
     }
     data.bankId = Number(bankId)
+  }
+  if ('comment' in body) {
+    const trimmed = typeof comment === 'string' ? comment.trim().slice(0, 1000) : null
+    data.comment = trimmed || null
   }
   if (Object.keys(data).length === 0)
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

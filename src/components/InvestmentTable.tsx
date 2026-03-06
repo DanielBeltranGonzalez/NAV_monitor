@@ -28,6 +28,7 @@ interface Bank {
 interface Investment {
   id: number
   name: string
+  comment: string | null
   bank: Bank
   createdAt: string
   values: InvestmentValue[]
@@ -36,6 +37,7 @@ interface Investment {
 interface EditState {
   name: string
   bankId: string
+  comment: string
 }
 
 export function InvestmentTable({
@@ -48,13 +50,13 @@ export function InvestmentTable({
   const router = useRouter()
   const [deleting, setDeleting] = useState<number | null>(null)
   const [editing, setEditing] = useState<number | null>(null)
-  const [editState, setEditState] = useState<EditState>({ name: '', bankId: '' })
+  const [editState, setEditState] = useState<EditState>({ name: '', bankId: '', comment: '' })
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
   function startEdit(inv: Investment) {
     setEditing(inv.id)
-    setEditState({ name: inv.name, bankId: String(inv.bank.id) })
+    setEditState({ name: inv.name, bankId: String(inv.bank.id), comment: inv.comment ?? '' })
   }
 
   function cancelEdit() {
@@ -68,7 +70,7 @@ export function InvestmentTable({
     const res = await fetch(`/api/investments/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editState.name, bankId: Number(editState.bankId) }),
+      body: JSON.stringify({ name: editState.name, bankId: Number(editState.bankId), comment: editState.comment.trim() || null }),
     })
     setSaving(false)
     if (!res.ok) {
@@ -157,9 +159,24 @@ export function InvestmentTable({
                       ))}
                     </SelectContent>
                   </Select>
+                  <textarea
+                    value={editState.comment}
+                    onChange={(e) => setEditState((s) => ({ ...s, comment: e.target.value }))}
+                    rows={2}
+                    maxLength={1000}
+                    placeholder="Comentario…"
+                    className="w-48 resize-none rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
                 </div>
               ) : (
-                <span className="font-medium">{inv.name}</span>
+                <div>
+                  <span className="font-medium">{inv.name}</span>
+                  {inv.comment && (
+                    <span className="block text-xs text-muted-foreground mt-0.5 truncate max-w-xs">
+                      {inv.comment}
+                    </span>
+                  )}
+                </div>
               )}
             </TableCell>
             <TableCell className="text-right">
