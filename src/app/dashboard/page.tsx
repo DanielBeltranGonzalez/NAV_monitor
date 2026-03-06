@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { DashboardChart } from '@/components/DashboardChart'
 import { DashboardView } from '@/components/DashboardView'
 import { formatDate } from '@/lib/formatters'
 import { prisma } from '@/lib/prisma'
@@ -277,7 +276,6 @@ export default async function DashboardPage({
               }))}
             chartTotals={chartTotals}
           />
-          <DashboardChart />
         </div>
       )}
     </div>

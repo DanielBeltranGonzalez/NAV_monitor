@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { DashboardDatePicker } from "@/components/DashboardDatePicker"
 import { DashboardTable } from "@/components/DashboardTable"
+import { DashboardChart } from "@/components/DashboardChart"
 
 type DiffResult = { diff: number; pct: number; days: number } | null
 
@@ -61,6 +62,7 @@ export function DashboardView({ dateValue, dateMax, bankGroups, chartTotals }: D
         </div>
       </div>
       <DashboardTable bankGroups={bankGroups} chartTotals={chartTotals} summary={summary} />
+      {summary && <DashboardChart />}
     </>
   )
 }
