@@ -153,16 +153,16 @@ function DiffSumCell({ result }: { result: DiffResult }) {
 function SubtotalRow({ bank, nav, subtotals }: { bank: string; nav: number; subtotals: GroupTotals }) {
   return (
     <tr className="bg-slate-100 dark:bg-slate-700/60 border-b border-slate-300 dark:border-slate-600">
-      <td className="px-4 py-2 font-semibold text-slate-700 dark:text-slate-200" colSpan={2}>
+      <td className="px-4 py-1 font-semibold text-slate-700 dark:text-slate-200" colSpan={2}>
         Subtotal — {bank}
       </td>
-      <td className="px-4 py-2 text-right tabular-nums font-bold text-slate-800 dark:text-slate-100">
+      <td className="px-4 py-1 text-right tabular-nums font-bold text-slate-800 dark:text-slate-100">
         {formatEUR(nav)}
       </td>
-      <td className="px-4 py-2" />
-      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={subtotals.prev} /></td>
-      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={subtotals.prevMonth} /></td>
-      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={subtotals.prevYear} /></td>
+      <td className="px-4 py-1" />
+      <td className="px-4 py-1 text-right text-sm"><DiffSumCell result={subtotals.prev} /></td>
+      <td className="px-4 py-1 text-right text-sm"><DiffSumCell result={subtotals.prevMonth} /></td>
+      <td className="px-4 py-1 text-right text-sm"><DiffSumCell result={subtotals.prevYear} /></td>
     </tr>
   )
 }
@@ -170,20 +170,20 @@ function SubtotalRow({ bank, nav, subtotals }: { bank: string; nav: number; subt
 function TotalRow({ chartTotals }: { chartTotals: GroupTotals }) {
   return (
     <tr className="bg-slate-800 dark:bg-slate-950 text-white">
-      <td className="px-4 py-3 font-bold" colSpan={2}>
+      <td className="px-4 py-1.5 font-bold" colSpan={2}>
         Total portfolio
       </td>
-      <td className="px-4 py-3 text-right tabular-nums font-bold text-lg">
+      <td className="px-4 py-1.5 text-right tabular-nums font-bold text-lg">
         {formatEUR(chartTotals.currentTotal)}
       </td>
-      <td className="px-4 py-3" />
-      <td className="px-4 py-3 text-right text-sm">
+      <td className="px-4 py-1.5" />
+      <td className="px-4 py-1.5 text-right text-sm">
         <DiffSumCell result={chartTotals.prev} />
       </td>
-      <td className="px-4 py-3 text-right text-sm">
+      <td className="px-4 py-1.5 text-right text-sm">
         <DiffSumCell result={chartTotals.prevMonth} />
       </td>
-      <td className="px-4 py-3 text-right text-sm">
+      <td className="px-4 py-1.5 text-right text-sm">
         <DiffSumCell result={chartTotals.prevYear} />
       </td>
     </tr>
@@ -307,7 +307,7 @@ export default async function DashboardPage({
       </div>
 
       {dateOutliers.length > 0 && (
-        <div className="mb-4 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+        <div className="mb-4 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-1.5 text-sm text-amber-800 dark:text-amber-300">
           <p className="font-semibold mb-1">
             ⚠ Los siguientes valores no son de la fecha más reciente ({formatDate(newestDate)}):
           </p>
@@ -333,13 +333,13 @@ export default async function DashboardPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-slate-50 dark:bg-slate-800 dark:border-slate-700 text-muted-foreground">
-                <th className="px-4 py-3 text-left font-medium">Inversión</th>
-                <th className="px-4 py-3 text-left font-medium">Banco</th>
-                <th className="px-4 py-3 text-right font-medium">NAV actual</th>
-                <th className="px-4 py-3 text-left font-medium">Fecha</th>
-                <th className="px-4 py-3 text-right font-medium">vs Anterior</th>
-                <th className="px-4 py-3 text-right font-medium">vs Mes ant.</th>
-                <th className="px-4 py-3 text-right font-medium">vs Año ant.</th>
+                <th className="px-4 py-1.5 text-left font-medium">Inversión</th>
+                <th className="px-4 py-1.5 text-left font-medium">Banco</th>
+                <th className="px-4 py-1.5 text-right font-medium">NAV actual</th>
+                <th className="px-4 py-1.5 text-left font-medium">Fecha</th>
+                <th className="px-4 py-1.5 text-right font-medium">vs Anterior</th>
+                <th className="px-4 py-1.5 text-right font-medium">vs Mes ant.</th>
+                <th className="px-4 py-1.5 text-right font-medium">vs Año ant.</th>
               </tr>
             </thead>
             <tbody>

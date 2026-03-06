@@ -66,26 +66,26 @@ export function DashboardRow({
 }: DashboardRowProps) {
   return (
     <tr className="border-b hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-      <td className="px-4 py-3 font-medium">
+      <td className="px-4 py-1.5 font-medium">
         {name}
         {comment && (
           <span title={comment} className="ml-1.5 text-slate-400 cursor-help text-xs align-middle">ⓘ</span>
         )}
       </td>
-      <td className="px-4 py-3 text-muted-foreground text-sm">{bank}</td>
-      <td className="px-4 py-3 text-right tabular-nums font-semibold">
+      <td className="px-4 py-1.5 text-muted-foreground text-sm">{bank}</td>
+      <td className="px-4 py-1.5 text-right tabular-nums font-semibold">
         {current ? formatEUR(parseFloat(current.value)) : '—'}
       </td>
-      <td className="px-4 py-3 text-sm text-muted-foreground">
+      <td className="px-4 py-1.5 text-sm text-muted-foreground">
         {current ? formatDate(current.date) : '—'}
       </td>
-      <td className="px-4 py-3 text-right text-sm">
+      <td className="px-4 py-1.5 text-right text-sm">
         <DiffCell current={current} reference={previous} />
       </td>
-      <td className="px-4 py-3 text-right text-sm">
+      <td className="px-4 py-1.5 text-right text-sm">
         <DiffCell current={current} reference={prevMonth} />
       </td>
-      <td className="px-4 py-3 text-right text-sm">
+      <td className="px-4 py-1.5 text-right text-sm">
         <DiffCell current={current} reference={prevYear} />
       </td>
     </tr>
