@@ -99,7 +99,7 @@ function TotalRow({ chartTotals }: { chartTotals: GroupTotals }) {
 
 export function DashboardTable({ bankGroups, chartTotals, summary }: DashboardTableProps) {
   return (
-    <div className="rounded-md border bg-white dark:bg-slate-900 overflow-auto max-h-[calc(100vh-220px)]">
+    <div className="rounded-md border bg-white dark:bg-slate-900 overflow-auto max-h-[calc(100vh-156px)]">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground">
