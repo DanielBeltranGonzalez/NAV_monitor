@@ -15,7 +15,6 @@ export default async function NewValuePage() {
 
   const investments = await prisma.investment.findMany({
     where: { userId },
-    orderBy: [{ bank: { name: 'asc' } }, { name: 'asc' }],
     include: {
       bank: true,
       values: {
@@ -23,6 +22,12 @@ export default async function NewValuePage() {
         take: 1,
       },
     },
+  })
+
+  const locale = { sensitivity: 'base' } as const
+  investments.sort((a, b) => {
+    const bankCmp = a.bank.name.localeCompare(b.bank.name, undefined, locale)
+    return bankCmp !== 0 ? bankCmp : a.name.localeCompare(b.name, undefined, locale)
   })
 
   const data = investments.map((inv) => ({
