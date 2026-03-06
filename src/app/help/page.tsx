@@ -59,6 +59,7 @@ export default function HelpPage() {
         <p>Aquí introduces el <strong>NAV actual</strong> de cada inversión. El formulario muestra el último valor registrado como referencia.</p>
         <p>Puedes actualizar varias inversiones a la vez. Si una inversión ya tiene un valor para esa fecha, se actualiza en lugar de crear uno nuevo.</p>
         <p>La fecha por defecto es hoy, pero puedes cambiarla para registrar valores históricos.</p>
+        <p className="text-amber-600 dark:text-amber-400 font-medium">Una vez introducidos los valores, no olvides pulsar el botón <strong>Guardar</strong> al final de la página para que los cambios queden registrados.</p>
       </Section>
 
       <Section icon={BarChart3} title="Dashboard">
