@@ -104,7 +104,7 @@ export default async function HelpPage() {
             <Section icon={DatabaseBackup} title="Backups (admin)">
               <p><strong>Backup manual</strong>: descarga una copia de la base de datos en cualquier momento.</p>
               <p><strong>Restaurar</strong>: sube un fichero <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">.db</code> para reemplazar la base de datos actual. Esta acción es irreversible.</p>
-              <p><strong>Backup automático</strong>: en Docker se realiza automáticamente cada noche a las 02:00 y se conservan las últimas copias indicadas en <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">BACKUP_KEEP_DAYS</code>.</p>
+              <p><strong>Backup automático</strong>: en Docker se realiza automáticamente cada noche a las 02:00 y se conservan las últimas copias indicadas en <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">BACKUP_KEEP_COPIES</code>.</p>
               <p><strong>Sincronización remota</strong>: los backups pueden sincronizarse automáticamente con un servidor externo via rsync/SSH. Requiere generar una clave SSH desde la propia app y añadirla al servidor destino.</p>
             </Section>
           </div>

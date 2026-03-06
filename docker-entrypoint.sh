@@ -5,7 +5,7 @@ echo "Aplicando migraciones de base de datos..."
 npx prisma migrate deploy
 
 # Backup automático nocturno
-BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-7}
+BACKUP_KEEP_COPIES=${BACKUP_KEEP_COPIES:-7}
 mkdir -p /data/backups
 mkdir -p /data/ssh && chmod 700 /data/ssh
 
@@ -33,9 +33,9 @@ fi
 SCRIPT
   chmod +x /tmp/nav-backup.sh
 
-  echo "0 2 * * * /tmp/nav-backup.sh && find /data/backups -name '*.db' -mtime +${BACKUP_KEEP_DAYS} -delete" > /etc/crontabs/root
+  echo "0 2 * * * /tmp/nav-backup.sh && ls -t /data/backups/nav_*.db 2>/dev/null | tail -n +$((${BACKUP_KEEP_COPIES}+1)) | xargs rm -f" > /etc/crontabs/root
   crond -b
-  echo "Backup automático programado (02:00 diario, retención ${BACKUP_KEEP_DAYS} días, solo si hay cambios)"
+  echo "Backup automático programado (02:00 diario, retención ${BACKUP_KEEP_COPIES} copias, solo si hay cambios)"
 else
   echo "Backup automático desactivado (crond no disponible o sin permisos)"
 fi
