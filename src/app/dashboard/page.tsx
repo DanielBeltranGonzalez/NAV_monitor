@@ -28,52 +28,20 @@ interface InvestmentData {
 
 type DiffResult = { diff: number; pct: number; days: number } | null
 
-function sumDiff(
-  investments: InvestmentData[],
-  key: 'previous' | 'prevMonth' | 'prevYear'
-): DiffResult {
-  let sumCurrent = 0
-  let sumRef = 0
-  let totalDays = 0
-  let count = 0
-  for (const inv of investments) {
-    if (!inv.current) continue
-    sumCurrent += parseFloat(inv.current.value)
-    if (inv[key]) {
-      sumRef += parseFloat(inv[key]!.value)
-      totalDays +=
-        (new Date(inv.current.date).getTime() - new Date(inv[key]!.date).getTime()) /
-        86_400_000
-      count++
-    }
-  }
-  if (count === 0) return null
-  const pct = sumRef !== 0 ? ((sumCurrent - sumRef) / sumRef) * 100 : 0
-  return { diff: sumCurrent - sumRef, pct, days: totalDays / count }
-}
-
-// Calcula los totales del portfolio usando la misma lógica que el chart API:
-// para cada fecha de referencia, suma el valor más reciente de CADA inversión
-// en o antes de esa fecha (incluyendo inversiones ahora cerradas).
-async function getChartTotals(userId: number, selectedDate: Date): Promise<{
+type GroupTotals = {
   currentTotal: number
   prev: DiffResult
   prevMonth: DiffResult
   prevYear: DiffResult
-}> {
-  const selectedDateStr = selectedDate.toISOString().slice(0, 10)
+}
 
-  const invs = await prisma.investment.findMany({
-    where: { userId },
-    select: {
-      values: {
-        select: { date: true, value: true },
-        orderBy: { date: 'asc' },
-      },
-    },
-  })
-
-  // Todas las fechas únicas con valores en o antes de la fecha seleccionada
+// Calcula los totales de un grupo de inversiones usando la misma lógica que el chart API:
+// para cada fecha de referencia, suma el valor más reciente de CADA inversión
+// en o antes de esa fecha (usando una fecha de referencia común para todo el grupo).
+function computeGroupTotals(
+  invs: { values: { date: Date; value: { toString(): string } }[] }[],
+  selectedDateStr: string
+): GroupTotals {
   const allDates = new Set<string>()
   for (const inv of invs) {
     for (const v of inv.values) {
@@ -85,7 +53,6 @@ async function getChartTotals(userId: number, selectedDate: Date): Promise<{
   const sorted = Array.from(allDates).sort()
   if (sorted.length === 0) return { currentTotal: 0, prev: null, prevMonth: null, prevYear: null }
 
-  // Total del portfolio en una fecha dada (igual que el chart)
   function totalAt(dateStr: string): number {
     let t = 0
     for (const inv of invs) {
@@ -101,17 +68,12 @@ async function getChartTotals(userId: number, selectedDate: Date): Promise<{
   const currentTotal = totalAt(currentDateStr)
   const [currentYear, currentMonth] = currentDateStr.split('-').map(Number)
 
-  // Fecha anterior: el punto inmediatamente anterior en el chart
   const prevDate = sorted.length >= 2 ? sorted[sorted.length - 2] : null
-
-  // Fecha mes anterior: el punto más reciente en un mes anterior
   const prevMonthDate =
     [...sorted].reverse().find((d) => {
       const [y, m] = d.split('-').map(Number)
       return y < currentYear || (y === currentYear && m < currentMonth)
     }) ?? null
-
-  // Fecha año anterior: el punto más reciente en un año anterior
   const prevYearDate =
     [...sorted].reverse().find((d) => Number(d.split('-')[0]) < currentYear) ?? null
 
@@ -133,6 +95,42 @@ async function getChartTotals(userId: number, selectedDate: Date): Promise<{
   }
 }
 
+// Calcula los totales globales del portfolio y los subtotales por banco,
+// usando la misma lógica que el chart API.
+async function getChartTotals(userId: number, selectedDate: Date): Promise<
+  GroupTotals & { bankSubtotals: Map<string, GroupTotals> }
+> {
+  const selectedDateStr = selectedDate.toISOString().slice(0, 10)
+
+  const invs = await prisma.investment.findMany({
+    where: { userId },
+    select: {
+      bank: { select: { name: true } },
+      values: {
+        select: { date: true, value: true },
+        orderBy: { date: 'asc' },
+      },
+    },
+  })
+
+  const overall = computeGroupTotals(invs, selectedDateStr)
+
+  // Subtotales por banco
+  const bankMap = new Map<string, typeof invs>()
+  for (const inv of invs) {
+    const name = inv.bank.name
+    if (!bankMap.has(name)) bankMap.set(name, [])
+    bankMap.get(name)!.push(inv)
+  }
+
+  const bankSubtotals = new Map<string, GroupTotals>()
+  for (const [bankName, bankInvs] of bankMap) {
+    bankSubtotals.set(bankName, computeGroupTotals(bankInvs, selectedDateStr))
+  }
+
+  return { ...overall, bankSubtotals }
+}
+
 function DiffSumCell({ result }: { result: DiffResult }) {
   if (result === null) return <span className="text-muted-foreground">—</span>
   const colorClass = result.diff >= 0 ? 'text-emerald-600' : 'text-red-500'
@@ -151,12 +149,7 @@ function DiffSumCell({ result }: { result: DiffResult }) {
   )
 }
 
-function SubtotalRow({ bank, investments }: { bank: string; investments: InvestmentData[] }) {
-  const nav = investments.reduce((s, inv) => s + (inv.current ? parseFloat(inv.current.value) : 0), 0)
-  const diffPrev = sumDiff(investments, 'previous')
-  const diffMonth = sumDiff(investments, 'prevMonth')
-  const diffYear = sumDiff(investments, 'prevYear')
-
+function SubtotalRow({ bank, nav, subtotals }: { bank: string; nav: number; subtotals: GroupTotals }) {
   return (
     <tr className="bg-slate-100 dark:bg-slate-700/60 border-b border-slate-300 dark:border-slate-600">
       <td className="px-4 py-2 font-semibold text-slate-700 dark:text-slate-200" colSpan={2}>
@@ -166,18 +159,14 @@ function SubtotalRow({ bank, investments }: { bank: string; investments: Investm
         {formatEUR(nav)}
       </td>
       <td className="px-4 py-2" />
-      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={diffPrev} /></td>
-      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={diffMonth} /></td>
-      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={diffYear} /></td>
+      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={subtotals.prev} /></td>
+      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={subtotals.prevMonth} /></td>
+      <td className="px-4 py-2 text-right text-sm"><DiffSumCell result={subtotals.prevYear} /></td>
     </tr>
   )
 }
 
-function TotalRow({
-  chartTotals,
-}: {
-  chartTotals: Awaited<ReturnType<typeof getChartTotals>>
-}) {
+function TotalRow({ chartTotals }: { chartTotals: GroupTotals }) {
   return (
     <tr className="bg-slate-800 dark:bg-slate-950 text-white">
       <td className="px-4 py-3 font-bold" colSpan={2}>
@@ -306,6 +295,8 @@ export default async function DashboardPage({
     bankGroups.get(inv.bank)!.push(inv)
   }
 
+  const emptyTotals: GroupTotals = { currentTotal: 0, prev: null, prevMonth: null, prevYear: null }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -364,7 +355,11 @@ export default async function DashboardPage({
                     />
                   ))}
                   {bankGroups.size > 1 && (
-                    <SubtotalRow bank={bank} investments={rows} />
+                    <SubtotalRow
+                      bank={bank}
+                      nav={rows.reduce((s, inv) => s + (inv.current ? parseFloat(inv.current.value) : 0), 0)}
+                      subtotals={chartTotals.bankSubtotals.get(bank) ?? emptyTotals}
+                    />
                   )}
                 </Fragment>
               ))}
