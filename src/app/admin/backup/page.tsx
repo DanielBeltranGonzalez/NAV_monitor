@@ -26,6 +26,7 @@ export default function AdminBackupPage() {
   const [remoteSaveError, setRemoteSaveError] = useState("")
   const [remoteSaveSuccess, setRemoteSaveSuccess] = useState(false)
   const [remoteDisabling, setRemoteDisabling] = useState(false)
+  const [remoteDisableConfirming, setRemoteDisableConfirming] = useState(false)
 
   const [syncing, setSyncing] = useState(false)
   const [syncOutput, setSyncOutput] = useState("")
@@ -90,6 +91,7 @@ export default function AdminBackupPage() {
       setRemoteHost("")
       setRemotePort("")
       setRemoteLastSync(null)
+      setRemoteDisableConfirming(false)
     } catch {
       setRemoteSaveError("Error de conexión")
     } finally {
@@ -606,16 +608,37 @@ export default function AdminBackupPage() {
                     >
                       {remoteSaving ? "Guardando…" : "Guardar configuración"}
                     </button>
-                    {remoteHost.trim() && (
+                    {remoteHost.trim() && !remoteDisableConfirming && (
                       <button
-                        onClick={handleDisableRemote}
-                        disabled={remoteDisabling}
-                        className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setRemoteDisableConfirming(true)}
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                       >
-                        {remoteDisabling ? "Desactivando…" : "Desactivar"}
+                        Desactivar
                       </button>
                     )}
                   </div>
+                  {remoteDisableConfirming && (
+                    <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-3 space-y-2">
+                      <p className="text-sm text-red-700 dark:text-red-400 font-medium">¿Desactivar la sincronización remota?</p>
+                      <p className="text-xs text-red-600 dark:text-red-400">Se borrará la configuración del servidor destino.</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleDisableRemote}
+                          disabled={remoteDisabling}
+                          className="px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {remoteDisabling ? "Desactivando…" : "Confirmar"}
+                        </button>
+                        <button
+                          onClick={() => setRemoteDisableConfirming(false)}
+                          disabled={remoteDisabling}
+                          className="px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100 transition-colors disabled:opacity-50"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
