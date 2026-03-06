@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
 import { logEvent } from '@/lib/audit'
 import { readFileSync, writeFileSync, unlinkSync } from 'fs'
+import { execFileSync } from 'child_process'
 import { resolve } from 'path'
 import { tmpdir } from 'os'
 import { prisma } from '@/lib/prisma'
@@ -50,16 +51,14 @@ const SQLITE_MAGIC = 'SQLite format 3\0'
 const MAX_SIZE = 100 * 1024 * 1024 // 100 MB
 
 function getTablesFromFile(dbPath: string): string[] {
-  // Require lazy para evitar que Turbopack intente resolver node:sqlite en tiempo de bundle
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
-  const db = new DatabaseSync(dbPath, { open: true })
-  try {
-    const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
-    return rows.map(r => r.name)
-  } finally {
-    db.close()
-  }
+  // Ejecutar en proceso hijo para evitar que Turbopack intercepte node:sqlite
+  const code = `const{DatabaseSync}=require('node:sqlite');const db=new DatabaseSync(${JSON.stringify(dbPath)});const r=db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();process.stdout.write(JSON.stringify(r.map(x=>x.name)));db.close();`
+  const out = execFileSync(process.execPath, ['-e', code], {
+    encoding: 'utf8',
+    timeout: 5000,
+    env: { ...process.env, NODE_NO_WARNINGS: '1' },
+  })
+  return JSON.parse(out) as string[]
 }
 
 function validateSchema(buffer: Buffer, currentDbPath: string): { ok: boolean; missing?: string[] } {
@@ -71,9 +70,7 @@ function validateSchema(buffer: Buffer, currentDbPath: string): { ok: boolean; m
     const missing = required.filter(t => !existing.includes(t))
     return missing.length === 0 ? { ok: true } : { ok: false, missing }
   } catch {
-    // Si node:sqlite no está disponible en este entorno, omitir la validación
-    // (los magic bytes ya garantizan que es un archivo SQLite válido)
-    return { ok: true }
+    return { ok: false }
   } finally {
     try { unlinkSync(tmpPath) } catch { /* ignore */ }
   }
