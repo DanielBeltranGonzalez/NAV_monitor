@@ -22,6 +22,7 @@ function resolveBackupDir(): string | null {
 
 interface RemoteConfig {
   host: string | null
+  port: number | null
   path: string
   lastSync: string | null
 }
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
 
   const knownHostsPath = resolve(sshDir, 'known_hosts')
   const remotePath = config.path || '~/nav-backups'
+  const portFlag = config.port ? ` -p ${config.port}` : ''
 
   const result = spawnSync(
     'rsync',
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
       '-avz',
       '--mkpath',
       '-e',
-      `ssh -i ${keyPath} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${knownHostsPath} -o BatchMode=yes`,
+      `ssh -i ${keyPath}${portFlag} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${knownHostsPath} -o BatchMode=yes`,
       backupDir + '/',
       `${config.host}:${remotePath}/`,
     ],

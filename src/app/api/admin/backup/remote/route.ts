@@ -10,6 +10,7 @@ function resolveRemoteConfigPath(): string {
 
 interface RemoteConfig {
   host: string | null
+  port: number | null
   path: string
   lastSync: string | null
 }
@@ -17,12 +18,12 @@ interface RemoteConfig {
 function readConfig(): RemoteConfig {
   const configPath = resolveRemoteConfigPath()
   if (!existsSync(configPath)) {
-    return { host: null, path: '~/nav-backups', lastSync: null }
+    return { host: null, port: null, path: '~/nav-backups', lastSync: null }
   }
   try {
     return JSON.parse(readFileSync(configPath, 'utf8')) as RemoteConfig
   } catch {
-    return { host: null, path: '~/nav-backups', lastSync: null }
+    return { host: null, port: null, path: '~/nav-backups', lastSync: null }
   }
 }
 
@@ -56,9 +57,19 @@ export async function POST(request: Request) {
     ? body.path.trim()
     : '~/nav-backups'
 
+  let port: number | null = null
+  if (body.port !== undefined && body.port !== null && body.port !== '') {
+    const p = Number(body.port)
+    if (!Number.isInteger(p) || p < 1 || p > 65535) {
+      return NextResponse.json({ error: 'Puerto inválido (1-65535)' }, { status: 400 })
+    }
+    port = p
+  }
+
   const existing = readConfig()
   const newConfig: RemoteConfig = {
     host,
+    port,
     path: remotePath,
     lastSync: existing.lastSync,
   }

@@ -18,6 +18,7 @@ export default function AdminBackupPage() {
   const [sshKeyError, setSshKeyError] = useState("")
 
   const [remoteHost, setRemoteHost] = useState("")
+  const [remotePort, setRemotePort] = useState("")
   const [remotePath, setRemotePath] = useState("~/nav-backups")
   const [remoteLastSync, setRemoteLastSync] = useState<string | null>(null)
   const [remoteLoading, setRemoteLoading] = useState(true)
@@ -41,6 +42,7 @@ export default function AdminBackupPage() {
       .then((r) => r.json())
       .then((d) => {
         setRemoteHost(d.host ?? "")
+        setRemotePort(d.port ? String(d.port) : "")
         setRemotePath(d.path ?? "~/nav-backups")
         setRemoteLastSync(d.lastSync ?? null)
       })
@@ -81,7 +83,7 @@ export default function AdminBackupPage() {
       const res = await fetch("/api/admin/backup/remote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host: remoteHost, path: remotePath }),
+        body: JSON.stringify({ host: remoteHost, port: remotePort || null, path: remotePath }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -538,15 +540,29 @@ export default function AdminBackupPage() {
                 <p className="text-sm text-slate-400">Cargando…</p>
               ) : (
                 <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">usuario@servidor</label>
-                    <input
-                      type="text"
-                      value={remoteHost}
-                      onChange={(e) => { setRemoteHost(e.target.value); setRemoteSaveSuccess(false) }}
-                      placeholder="user@host.example.com"
-                      className="w-full text-sm px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                    />
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">usuario@servidor</label>
+                      <input
+                        type="text"
+                        value={remoteHost}
+                        onChange={(e) => { setRemoteHost(e.target.value); setRemoteSaveSuccess(false) }}
+                        placeholder="user@host.example.com"
+                        className="w-full text-sm px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Puerto SSH</label>
+                      <input
+                        type="number"
+                        value={remotePort}
+                        onChange={(e) => { setRemotePort(e.target.value); setRemoteSaveSuccess(false) }}
+                        placeholder="22"
+                        min={1}
+                        max={65535}
+                        className="w-full text-sm px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Ruta remota</label>
