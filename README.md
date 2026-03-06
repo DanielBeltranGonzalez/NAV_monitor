@@ -43,23 +43,6 @@ Al primer inicio, `docker-entrypoint.sh` ejecuta las migraciones automáticament
 > El **primer usuario que se registre** en `/auth/register` recibirá automáticamente el rol **ADMIN**.
 > Regístrate con tu cuenta definitiva antes de compartir la URL con otros usuarios.
 
-### Alternativa: despliegue por línea de comandos
-
-```bash
-# Descargar el docker-compose.yml
-curl -O https://raw.githubusercontent.com/DanielBeltranGonzalez/NAV_monitor/main/docker-compose.yml
-
-# Crear .env con las variables necesarias (ver tabla completa en Variables de entorno)
-cat > .env <<EOF
-JWT_SECRET=$(openssl rand -base64 48)
-# HOST_PORT=3000                    # opcional, por defecto 3000
-# DATABASE_URL=file:/data/nav.db   # opcional, este es el valor por defecto
-# BACKUP_KEEP_COPIES=7              # opcional, número de copias a conservar
-EOF
-
-docker compose up -d
-```
-
 ---
 
 ## Despliegue con docker-compose
