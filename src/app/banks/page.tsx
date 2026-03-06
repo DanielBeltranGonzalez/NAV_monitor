@@ -18,9 +18,9 @@ export default async function BanksPage() {
 
   const banks = await prisma.bank.findMany({
     where: { userId },
-    orderBy: { name: 'asc' },
     include: { _count: { select: { investments: true } } },
   })
+  banks.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 
   return (
     <div>
