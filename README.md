@@ -52,7 +52,7 @@ curl -O https://raw.githubusercontent.com/DanielBeltranGonzalez/NAV_monitor/main
 # Crear .env con las variables necesarias (ver tabla completa en Variables de entorno)
 cat > .env <<EOF
 JWT_SECRET=$(openssl rand -base64 48)
-HOST_PORT=3000
+# HOST_PORT=3000                    # opcional, por defecto 3000
 # DATABASE_URL=file:/data/nav.db   # opcional, este es el valor por defecto
 # BACKUP_KEEP_COPIES=7              # opcional, número de copias a conservar
 EOF
@@ -190,7 +190,7 @@ docker restart nav-monitor
 | Variable | Descripción | Obligatoria | Por defecto |
 |---|---|:---:|---|
 | `JWT_SECRET` | Secreto para firmar los tokens de sesión. Debe ser una cadena larga y aleatoria. | ✅ | — (la app no arranca sin este valor en producción) |
-| `HOST_PORT` | Puerto del host donde se expone la aplicación | No | `3000` |
+| `HOST_PORT` | Puerto del host donde se expone la aplicación | No | `3000` (definido en docker-compose) |
 | `DATABASE_URL` | Ruta a la base de datos SQLite dentro del contenedor | No | `file:/data/nav.db` |
 | `BACKUP_KEEP_COPIES` | Número de copias de backup automático a conservar | No | `7` |
 | `NODE_ENV` | Entorno de ejecución. El Dockerfile lo fija a `production` automáticamente. | No | `production` (Docker) |
