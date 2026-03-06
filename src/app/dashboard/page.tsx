@@ -329,17 +329,17 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div>
-          <div className="rounded-md border bg-white dark:bg-slate-900 overflow-x-auto">
+          <div className="rounded-md border bg-white dark:bg-slate-900 overflow-auto max-h-[calc(100vh-220px)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-slate-50 dark:bg-slate-800 dark:border-slate-700 text-muted-foreground sticky top-0 z-10">
-                <th className="px-4 py-1.5 text-left font-medium">Inversión</th>
-                <th className="px-4 py-1.5 text-left font-medium">Banco</th>
-                <th className="px-4 py-1.5 text-right font-medium">NAV actual</th>
-                <th className="px-4 py-1.5 text-left font-medium">Fecha</th>
-                <th className="px-4 py-1.5 text-right font-medium">vs Anterior</th>
-                <th className="px-4 py-1.5 text-right font-medium">vs Mes ant.</th>
-                <th className="px-4 py-1.5 text-right font-medium">vs Año ant.</th>
+              <tr className="text-muted-foreground">
+                <th className="px-4 py-1.5 text-left font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">Inversión</th>
+                <th className="px-4 py-1.5 text-left font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">Banco</th>
+                <th className="px-4 py-1.5 text-right font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">NAV actual</th>
+                <th className="px-4 py-1.5 text-left font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">Fecha</th>
+                <th className="px-4 py-1.5 text-right font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">vs Anterior</th>
+                <th className="px-4 py-1.5 text-right font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">vs Mes ant.</th>
+                <th className="px-4 py-1.5 text-right font-medium sticky top-0 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-10">vs Año ant.</th>
               </tr>
             </thead>
             <tbody>

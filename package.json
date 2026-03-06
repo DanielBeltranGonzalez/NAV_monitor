@@ -1,6 +1,6 @@
 {
   "name": "nav-monitor",
-  "version": "1.7.11",
+  "version": "1.7.12",
   "private": true,
   "scripts": {
     "dev": "next dev",
