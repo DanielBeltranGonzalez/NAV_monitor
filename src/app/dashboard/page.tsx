@@ -332,7 +332,7 @@ export default async function DashboardPage({
           <div className="rounded-md border bg-white dark:bg-slate-900 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-slate-50 dark:bg-slate-800 dark:border-slate-700 text-muted-foreground">
+              <tr className="border-b bg-slate-50 dark:bg-slate-800 dark:border-slate-700 text-muted-foreground sticky top-0 z-10">
                 <th className="px-4 py-1.5 text-left font-medium">Inversión</th>
                 <th className="px-4 py-1.5 text-left font-medium">Banco</th>
                 <th className="px-4 py-1.5 text-right font-medium">NAV actual</th>
