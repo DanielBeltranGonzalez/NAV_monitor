@@ -1,3 +1,5 @@
+import { cookies } from "next/headers"
+import { verifyToken, COOKIE_NAME } from "@/lib/auth"
 import { Building2, List, PlusCircle, BarChart3, UserCircle, DatabaseBackup, Users, ClipboardList } from "lucide-react"
 
 function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
@@ -23,7 +25,11 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   )
 }
 
-export default function HelpPage() {
+export default async function HelpPage() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(COOKIE_NAME)?.value
+  const payload = token ? await verifyToken(token) : null
+  const isAdmin = payload?.role === 'ADMIN'
   return (
     <div className="max-w-3xl space-y-6">
       <div>
@@ -81,27 +87,29 @@ export default function HelpPage() {
         <p>La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.</p>
       </Section>
 
-      <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Funciones de administración</p>
-        <div className="space-y-4">
-          <Section icon={Users} title="Usuarios (admin)">
-            <p>Gestión de cuentas de usuario. Puedes crear usuarios, cambiar su rol (USER / ADMIN), resetear contraseñas y eliminar cuentas.</p>
-            <p>Un administrador no puede eliminarse ni degradarse a sí mismo.</p>
-          </Section>
+      {isAdmin && (
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Funciones de administración</p>
+          <div className="space-y-4">
+            <Section icon={Users} title="Usuarios (admin)">
+              <p>Gestión de cuentas de usuario. Puedes crear usuarios, cambiar su rol (USER / ADMIN), resetear contraseñas y eliminar cuentas.</p>
+              <p>Un administrador no puede eliminarse ni degradarse a sí mismo.</p>
+            </Section>
 
-          <Section icon={ClipboardList} title="Eventos (admin)">
-            <p>Registro de actividad de la aplicación: inicios de sesión, cambios de contraseña, modificaciones de datos, etc.</p>
-            <p>El número de eventos no leídos se muestra como badge en el menú lateral.</p>
-          </Section>
+            <Section icon={ClipboardList} title="Eventos (admin)">
+              <p>Registro de actividad de la aplicación: inicios de sesión, cambios de contraseña, modificaciones de datos, etc.</p>
+              <p>El número de eventos no leídos se muestra como badge en el menú lateral.</p>
+            </Section>
 
-          <Section icon={DatabaseBackup} title="Backups (admin)">
-            <p><strong>Backup manual</strong>: descarga una copia de la base de datos en cualquier momento.</p>
-            <p><strong>Restaurar</strong>: sube un fichero <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">.db</code> para reemplazar la base de datos actual. Esta acción es irreversible.</p>
-            <p><strong>Backup automático</strong>: en Docker se realiza automáticamente cada noche a las 02:00 y se conservan los últimos días configurados en <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">BACKUP_KEEP_DAYS</code>.</p>
-            <p><strong>Sincronización remota</strong>: los backups pueden sincronizarse automáticamente con un servidor externo via rsync/SSH. Requiere generar una clave SSH desde la propia app y añadirla al servidor destino.</p>
-          </Section>
+            <Section icon={DatabaseBackup} title="Backups (admin)">
+              <p><strong>Backup manual</strong>: descarga una copia de la base de datos en cualquier momento.</p>
+              <p><strong>Restaurar</strong>: sube un fichero <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">.db</code> para reemplazar la base de datos actual. Esta acción es irreversible.</p>
+              <p><strong>Backup automático</strong>: en Docker se realiza automáticamente cada noche a las 02:00 y se conservan los últimos días configurados en <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">BACKUP_KEEP_DAYS</code>.</p>
+              <p><strong>Sincronización remota</strong>: los backups pueden sincronizarse automáticamente con un servidor externo via rsync/SSH. Requiere generar una clave SSH desde la propia app y añadirla al servidor destino.</p>
+            </Section>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
