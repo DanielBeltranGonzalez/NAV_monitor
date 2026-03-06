@@ -105,10 +105,10 @@ export function ValueForm({ investments }: ValueFormProps) {
         </colgroup>
         <thead>
           <tr className="border-b bg-slate-50 dark:bg-slate-800 text-muted-foreground">
-            <th className="px-4 py-3 text-left font-medium">Inversión</th>
-            <th className="px-4 py-3 text-right font-medium">Último valor</th>
-            <th className="px-4 py-3 text-right font-medium">Última fecha</th>
-            <th className="px-4 py-3 text-right font-medium">NAV (€)</th>
+            <th className="px-4 py-1.5 text-left font-medium">Inversión</th>
+            <th className="px-4 py-1.5 text-right font-medium">Último valor</th>
+            <th className="px-4 py-1.5 text-right font-medium">Última fecha</th>
+            <th className="px-4 py-1.5 text-right font-medium">NAV (€)</th>
           </tr>
         </thead>
         <tbody>

@@ -90,19 +90,19 @@ export default function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Email</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Rol</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Registro</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Última conexión</th>
-              <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Contraseña temporal</th>
-              <th className="text-right px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Acciones</th>
+              <th className="text-left px-4 py-1.5 font-semibold text-slate-600 dark:text-slate-300">Email</th>
+              <th className="text-left px-4 py-1.5 font-semibold text-slate-600 dark:text-slate-300">Rol</th>
+              <th className="text-left px-4 py-1.5 font-semibold text-slate-600 dark:text-slate-300">Registro</th>
+              <th className="text-left px-4 py-1.5 font-semibold text-slate-600 dark:text-slate-300">Última conexión</th>
+              <th className="text-left px-4 py-1.5 font-semibold text-slate-600 dark:text-slate-300">Contraseña temporal</th>
+              <th className="text-right px-4 py-1.5 font-semibold text-slate-600 dark:text-slate-300">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {users.map((u) => (
               <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
-                <td className="px-4 py-3 text-slate-800 dark:text-slate-100">{u.email}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-1.5 text-slate-800 dark:text-slate-100">{u.email}</td>
+                <td className="px-4 py-1.5">
                   {u.role === "ADMIN" ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
                       Admin
@@ -113,20 +113,20 @@ export default function AdminUsersPage() {
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                <td className="px-4 py-1.5 text-slate-600 dark:text-slate-300">
                   {formatDate(new Date(u.createdAt))}
                 </td>
-                <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                <td className="px-4 py-1.5 text-slate-600 dark:text-slate-300">
                   {u.lastLoginAt ? formatDate(new Date(u.lastLoginAt)) : <span className="text-slate-400">—</span>}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-1.5">
                   {resetPasswords[u.id] && (
                     <code className="bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded text-xs font-mono">
                       {resetPasswords[u.id]}
                     </code>
                   )}
                 </td>
-                <td className="px-4 py-3 text-right space-x-2">
+                <td className="px-4 py-1.5 text-right space-x-2">
                   <button
                     onClick={() => handleToggleRole(u)}
                     disabled={u.id === currentUserId}
