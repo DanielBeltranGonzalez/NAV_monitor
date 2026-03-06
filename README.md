@@ -70,6 +70,71 @@ docker compose up -d
 
 ---
 
+## Despliegue con docker-compose
+
+Si no usas Portainer, puedes desplegar la aplicación directamente con Docker Compose en cualquier servidor con Docker instalado.
+
+### Pasos
+
+1. Crea un directorio para el proyecto y descarga el fichero `docker-compose.yml`:
+
+   ```bash
+   mkdir nav-monitor && cd nav-monitor
+   curl -O https://raw.githubusercontent.com/DanielBeltranGonzalez/NAV_monitor/main/docker-compose.yml
+   ```
+
+2. Crea el fichero `.env` con las variables necesarias:
+
+   ```bash
+   cat > .env <<EOF
+   JWT_SECRET=$(openssl rand -base64 48)
+   HOST_PORT=3000
+   EOF
+   ```
+
+3. Arranca el contenedor:
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. Comprueba que está funcionando:
+
+   ```bash
+   docker compose ps
+   docker compose logs -f
+   ```
+
+La aplicación estará disponible en `http://<IP-DEL-SERVIDOR>:3000`.
+
+### Contenido del docker-compose.yml
+
+```yaml
+services:
+  nav-monitor:
+    image: tacombel/nav-monitor:latest
+    container_name: nav-monitor
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      - DATABASE_URL=file:/data/nav.db
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - nav_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  nav_data:
+```
+
+---
+
 ## Actualización a una nueva versión
 
 Cuando se publica una nueva versión en Docker Hub:
