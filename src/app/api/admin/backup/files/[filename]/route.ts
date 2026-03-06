@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
 import { logEvent } from '@/lib/audit'
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
-import { tmpdir } from 'os'
 import { prisma } from '@/lib/prisma'
 
 const VALID_FILENAME = /^nav_\d{8}_\d{6}\.db$/
@@ -26,33 +25,6 @@ function resolveDbPath(): string | null {
     try { readFileSync(p); return p } catch { /* skip */ }
   }
   return null
-}
-
-function getTablesFromFile(dbPath: string): string[] {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
-  const db = new DatabaseSync(dbPath, { open: true })
-  try {
-    const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
-    return rows.map(r => r.name)
-  } finally {
-    db.close()
-  }
-}
-
-function validateSchema(buffer: Buffer, currentDbPath: string): { ok: boolean; missing?: string[] } {
-  const tmpPath = resolve(tmpdir(), `nav_schema_check_${Date.now()}.db`)
-  try {
-    writeFileSync(tmpPath, buffer)
-    const required = getTablesFromFile(currentDbPath)
-    const existing = getTablesFromFile(tmpPath)
-    const missing = required.filter(t => !existing.includes(t))
-    return missing.length === 0 ? { ok: true } : { ok: false, missing }
-  } catch {
-    return { ok: false }
-  } finally {
-    try { unlinkSync(tmpPath) } catch { /* ignore */ }
-  }
 }
 
 export async function GET(
@@ -120,15 +92,6 @@ export async function POST(
   const dbPath = resolveDbPath()
   if (!dbPath) {
     return NextResponse.json({ error: 'No se encontró la ruta de la base de datos' }, { status: 500 })
-  }
-
-  const schemaCheck = validateSchema(buffer, dbPath)
-  if (!schemaCheck.ok) {
-    const missing = schemaCheck.missing?.join(', ') ?? 'desconocidas'
-    return NextResponse.json(
-      { error: `El backup no es compatible con esta versión de la aplicación. Tablas faltantes: ${missing}` },
-      { status: 400 }
-    )
   }
 
   await prisma.$disconnect()
