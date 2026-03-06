@@ -1,3 +1,4 @@
+import React from "react"
 import { DashboardRow } from "@/components/DashboardCard"
 import { formatEUR, formatChangePercent } from "@/lib/formatters"
 
@@ -114,7 +115,7 @@ export function DashboardTable({ bankGroups, chartTotals, summary }: DashboardTa
           </thead>
           <tbody>
             {bankGroups.map(({ bank, investments, subtotals }) => (
-              <>
+              <React.Fragment key={bank}>
                 {!summary && investments.map((inv) => (
                   <DashboardRow
                     key={inv.id}
@@ -134,7 +135,7 @@ export function DashboardTable({ bankGroups, chartTotals, summary }: DashboardTa
                     subtotals={subtotals}
                   />
                 )}
-              </>
+              </React.Fragment>
             ))}
             <TotalRow chartTotals={chartTotals} />
           </tbody>
