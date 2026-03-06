@@ -193,12 +193,18 @@ docker restart nav-monitor
 
 ## Variables de entorno
 
-| Variable | Descripción | Por defecto |
-|---|---|---|
-| `JWT_SECRET` | Secreto para firmar los tokens de sesión. **Obligatorio en producción.** | — (error si no se define) |
-| `HOST_PORT` | Puerto del host donde se expone la aplicación | `3000` |
-| `DATABASE_URL` | Ruta a la base de datos SQLite | `file:/data/nav.db` |
-| `BACKUP_KEEP_COPIES` | Número de copias de backup automático a conservar | `7` |
+| Variable | Descripción | Obligatoria | Por defecto |
+|---|---|:---:|---|
+| `JWT_SECRET` | Secreto para firmar los tokens de sesión. Debe ser una cadena larga y aleatoria. | ✅ | — (la app no arranca sin este valor en producción) |
+| `HOST_PORT` | Puerto del host donde se expone la aplicación | No | `3000` |
+| `DATABASE_URL` | Ruta a la base de datos SQLite dentro del contenedor | No | `file:/data/nav.db` |
+| `BACKUP_KEEP_COPIES` | Número de copias de backup automático a conservar | No | `7` |
+| `NODE_ENV` | Entorno de ejecución. El Dockerfile lo fija a `production` automáticamente. | No | `production` (Docker) |
+
+> **Generar un `JWT_SECRET` seguro:**
+> ```bash
+> openssl rand -base64 48
+> ```
 
 ---
 
