@@ -1,11 +1,32 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect, useCallback } from "react"
 import { Download, Upload } from "lucide-react"
+
+interface BackupFile {
+  name: string
+  size: number
+  createdAt: string
+}
 
 export default function AdminBackupPage() {
   const [downloadLoading, setDownloadLoading] = useState(false)
   const [downloadError, setDownloadError] = useState("")
+
+  const [backups, setBackups] = useState<BackupFile[]>([])
+  const [backupsLoading, setBackupsLoading] = useState(true)
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null)
+
+  const loadBackups = useCallback(() => {
+    setBackupsLoading(true)
+    fetch("/api/admin/backup/list")
+      .then((r) => r.json())
+      .then((d) => setBackups(Array.isArray(d) ? d : []))
+      .catch(() => setBackups([]))
+      .finally(() => setBackupsLoading(false))
+  }, [])
+
+  useEffect(() => { loadBackups() }, [loadBackups])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -50,10 +71,34 @@ export default function AdminBackupPage() {
     setRestoreSuccess(false)
   }
 
+  async function handleDownloadFile(filename: string) {
+    setDownloadingFile(filename)
+    try {
+      const res = await fetch(`/api/admin/backup/files/${encodeURIComponent(filename)}`)
+      if (!res.ok) return
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDownloadingFile(null)
+    }
+  }
+
   function formatSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  // Parsea "nav_20260306_020000.db" → "06/03/2026 02:00"
+  function formatBackupName(name: string) {
+    const m = name.match(/nav_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/)
+    if (!m) return name
+    return `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}`
   }
 
   async function handleRestore() {
@@ -178,6 +223,65 @@ export default function AdminBackupPage() {
           <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
             Backup restaurado correctamente
           </p>
+        )}
+      </div>
+
+      {/* Backups guardados */}
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Backups guardados</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Copias generadas automáticamente y almacenadas en el servidor.
+            </p>
+          </div>
+          <button
+            onClick={loadBackups}
+            disabled={backupsLoading}
+            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors disabled:opacity-40"
+          >
+            Actualizar
+          </button>
+        </div>
+
+        {backupsLoading ? (
+          <p className="text-sm text-slate-400">Cargando…</p>
+        ) : backups.length === 0 ? (
+          <p className="text-sm text-slate-400">No hay backups guardados en el servidor.</p>
+        ) : (
+          <div className="rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left px-4 py-2 font-medium text-slate-600 dark:text-slate-300">Fecha</th>
+                  <th className="text-right px-4 py-2 font-medium text-slate-600 dark:text-slate-300">Tamaño</th>
+                  <th className="px-4 py-2" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {backups.map((b) => (
+                  <tr key={b.name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <td className="px-4 py-2.5 text-slate-700 dark:text-slate-300 font-mono text-xs">
+                      {formatBackupName(b.name)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-slate-500 dark:text-slate-400 tabular-nums">
+                      {formatSize(b.size)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button
+                        onClick={() => handleDownloadFile(b.name)}
+                        disabled={downloadingFile === b.name}
+                        className="flex items-center gap-1.5 ml-auto px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-40"
+                      >
+                        <Download className="h-3 w-3" />
+                        {downloadingFile === b.name ? "…" : "Descargar"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
