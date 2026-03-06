@@ -61,7 +61,7 @@ function SubtotalRow({ bank, nav, subtotals }: { bank: string; nav: number; subt
   return (
     <tr className="bg-slate-100 dark:bg-slate-700/60 border-b border-slate-300 dark:border-slate-600">
       <td className="px-4 py-1 font-semibold text-slate-700 dark:text-slate-200" colSpan={2}>
-        Subtotal — {bank}
+        {bank}
       </td>
       <td className="px-4 py-1 text-right tabular-nums font-bold text-slate-800 dark:text-slate-100">
         {formatEUR(nav)}
