@@ -37,13 +37,15 @@ function sumDiff(
   let totalDays = 0
   let count = 0
   for (const inv of investments) {
-    if (!inv.current || !inv[key]) continue
+    if (!inv.current) continue
     sumCurrent += parseFloat(inv.current.value)
-    sumRef += parseFloat(inv[key]!.value)
-    totalDays +=
-      (new Date(inv.current.date).getTime() - new Date(inv[key]!.date).getTime()) /
-      86_400_000
-    count++
+    if (inv[key]) {
+      sumRef += parseFloat(inv[key]!.value)
+      totalDays +=
+        (new Date(inv.current.date).getTime() - new Date(inv[key]!.date).getTime()) /
+        86_400_000
+      count++
+    }
   }
   if (count === 0) return null
   const pct = sumRef !== 0 ? ((sumCurrent - sumRef) / sumRef) * 100 : 0
