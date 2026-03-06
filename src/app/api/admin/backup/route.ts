@@ -48,10 +48,11 @@ export async function GET(request: Request) {
 
 const SQLITE_MAGIC = 'SQLite format 3\0'
 const MAX_SIZE = 100 * 1024 * 1024 // 100 MB
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
 
 function getTablesFromFile(dbPath: string): string[] {
+  // Require lazy para evitar que Turbopack intente resolver node:sqlite en tiempo de bundle
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
   const db = new DatabaseSync(dbPath, { open: true })
   try {
     const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
