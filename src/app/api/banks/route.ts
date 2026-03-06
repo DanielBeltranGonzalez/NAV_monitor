@@ -9,8 +9,8 @@ export async function GET(request: Request) {
 
   const banks = await prisma.bank.findMany({
     where: { userId: user.id },
-    orderBy: { name: 'asc' },
   })
+  banks.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
   return NextResponse.json(banks)
 }
 
