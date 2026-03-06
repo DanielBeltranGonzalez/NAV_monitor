@@ -2,6 +2,10 @@ import bcryptjs from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import type { NextRequest } from 'next/server'
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET no está definido. Debes configurarlo en producción.')
+}
+
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'dev-secret-change-in-production'
 )
