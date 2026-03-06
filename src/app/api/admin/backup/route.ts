@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
 import { logEvent } from '@/lib/audit'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync, unlinkSync } from 'fs'
 import { resolve } from 'path'
+import { tmpdir } from 'os'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
@@ -47,6 +48,27 @@ export async function GET(request: Request) {
 
 const SQLITE_MAGIC = 'SQLite format 3\0'
 const MAX_SIZE = 100 * 1024 * 1024 // 100 MB
+const REQUIRED_TABLES = ['User', 'Bank', 'Investment', 'AuditLog', 'InvestmentValue']
+
+function validateSchema(buffer: Buffer): { ok: boolean; missing?: string[] } {
+  const tmpPath = resolve(tmpdir(), `nav_schema_check_${Date.now()}.db`)
+  try {
+    writeFileSync(tmpPath, buffer)
+    // node:sqlite está disponible en Node.js 22+ (experimental)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
+    const db = new DatabaseSync(tmpPath, { open: true })
+    const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
+    db.close()
+    const existing = rows.map(r => r.name)
+    const missing = REQUIRED_TABLES.filter(t => !existing.includes(t))
+    return missing.length === 0 ? { ok: true } : { ok: false, missing }
+  } catch {
+    return { ok: false, missing: REQUIRED_TABLES }
+  } finally {
+    try { unlinkSync(tmpPath) } catch { /* ignore */ }
+  }
+}
 
 function resolveDbPath(): string | null {
   const dbUrl = process.env.DATABASE_URL ?? ''
@@ -93,6 +115,16 @@ export async function POST(request: Request) {
   const magic = buffer.slice(0, 16).toString('binary')
   if (magic !== SQLITE_MAGIC) {
     return NextResponse.json({ error: 'El archivo no es una base de datos SQLite válida' }, { status: 400 })
+  }
+
+  // Validar que el schema contenga todas las tablas requeridas
+  const schemaCheck = validateSchema(buffer)
+  if (!schemaCheck.ok) {
+    const missing = schemaCheck.missing?.join(', ') ?? 'desconocidas'
+    return NextResponse.json(
+      { error: `El backup no es compatible con esta versión de la aplicación. Tablas faltantes: ${missing}` },
+      { status: 400 }
+    )
   }
 
   const dbPath = resolveDbPath()
