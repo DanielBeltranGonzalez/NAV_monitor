@@ -31,17 +31,7 @@ Construida con Next.js 16, SQLite (Prisma) y Tailwind CSS v4.
 1. En Portainer, ir a **Stacks → Add stack**.
 2. Seleccionar **Web editor** como origen.
 3. Pegar el contenido del fichero `docker-compose.yml` de este repositorio.
-4. En la sección **Environment variables**, añadir:
-
-   | Variable | Valor |
-   |---|---|
-   | `JWT_SECRET` | Cadena aleatoria larga y segura (ver nota) |
-   | `HOST_PORT` | Puerto del host donde se expondrá la app (ej. `3000`) |
-
-   > **Cómo generar `JWT_SECRET`:**
-   > ```bash
-   > openssl rand -base64 48
-   > ```
+4. En la sección **Environment variables**, añadir al menos `JWT_SECRET` y opcionalmente `HOST_PORT`. Ver la tabla completa en [Variables de entorno](#variables-de-entorno).
 
 5. Hacer clic en **Deploy the stack**.
 
@@ -165,7 +155,7 @@ Los administradores pueden descargar una copia de la base de datos en cualquier 
 
 En entornos Docker, el contenedor ejecuta automáticamente una copia de seguridad cada noche a las **02:00**, pero solo si la base de datos ha cambiado desde el último backup (comparación por hash SHA-256). Los backups se guardan en `/data/backups/` dentro del volumen persistente.
 
-El número de copias a conservar es configurable mediante la variable de entorno `BACKUP_KEEP_COPIES` (por defecto: 7 copias).
+El número de copias a conservar es configurable mediante `BACKUP_KEEP_COPIES` (ver [Variables de entorno](#variables-de-entorno)).
 
 ### Sincronización remota
 
@@ -200,11 +190,6 @@ docker restart nav-monitor
 | `DATABASE_URL` | Ruta a la base de datos SQLite dentro del contenedor | No | `file:/data/nav.db` |
 | `BACKUP_KEEP_COPIES` | Número de copias de backup automático a conservar | No | `7` |
 | `NODE_ENV` | Entorno de ejecución. El Dockerfile lo fija a `production` automáticamente. | No | `production` (Docker) |
-
-> **Generar un `JWT_SECRET` seguro:**
-> ```bash
-> openssl rand -base64 48
-> ```
 
 ---
 
