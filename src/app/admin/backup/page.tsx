@@ -685,7 +685,7 @@ export default function AdminBackupPage() {
               Cuando la aplicación se ejecuta en Docker, se realiza automáticamente una copia
               de seguridad cada noche a las 02:00. Los backups se guardan en{" "}
               <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">/data/backups/</code> y
-              se conservan los días indicados en{" "}
+              se conservan las últimas copias indicadas en{" "}
               <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-xs">BACKUP_KEEP_DAYS</code> (por defecto: 7).
               Si está configurada la sincronización remota, el cron también ejecuta rsync tras cada backup.
             </p>
