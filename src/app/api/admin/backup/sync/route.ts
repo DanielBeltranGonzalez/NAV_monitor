@@ -73,7 +73,8 @@ export async function POST(request: Request) {
 
   const knownHostsPath = resolve(sshDir, 'known_hosts')
   const remotePath = config.path || '~/nav-backups'
-  const portFlag = config.port ? ` -p ${config.port}` : ''
+  const portNum = config.port ? parseInt(String(config.port), 10) : NaN
+  const portFlag = !isNaN(portNum) && portNum > 0 && portNum <= 65535 ? ` -p ${portNum}` : ''
 
   const result = spawnSync(
     'rsync',

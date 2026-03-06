@@ -81,12 +81,17 @@ export default function AdminBackupPage() {
     setRemoteSaveError("")
     setRemoteSaveSuccess(false)
     try {
-      await fetch("/api/admin/backup/remote", { method: "DELETE" })
+      const res = await fetch("/api/admin/backup/remote", { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setRemoteSaveError(data.error ?? "Error al desactivar la sincronización")
+        return
+      }
       setRemoteHost("")
       setRemotePort("")
       setRemoteLastSync(null)
     } catch {
-      // silencioso
+      setRemoteSaveError("Error de conexión")
     } finally {
       setRemoteDisabling(false)
     }

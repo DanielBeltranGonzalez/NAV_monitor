@@ -12,6 +12,10 @@ node_modules/
 # Backups (opcionales en git)
 prisma/backups/
 
+# Sincronización remota (claves SSH y config con host/credenciales)
+prisma/ssh/
+prisma/backup_remote.json
+
 # Env
 .env
 .env.local
