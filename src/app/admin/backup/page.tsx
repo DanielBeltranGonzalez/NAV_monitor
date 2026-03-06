@@ -25,6 +25,7 @@ export default function AdminBackupPage() {
   const [remoteSaving, setRemoteSaving] = useState(false)
   const [remoteSaveError, setRemoteSaveError] = useState("")
   const [remoteSaveSuccess, setRemoteSaveSuccess] = useState(false)
+  const [remoteDisabling, setRemoteDisabling] = useState(false)
 
   const [syncing, setSyncing] = useState(false)
   const [syncOutput, setSyncOutput] = useState("")
@@ -73,6 +74,22 @@ export default function AdminBackupPage() {
     await navigator.clipboard.writeText(sshPublicKey)
     setSshKeyCopied(true)
     setTimeout(() => setSshKeyCopied(false), 2000)
+  }
+
+  async function handleDisableRemote() {
+    setRemoteDisabling(true)
+    setRemoteSaveError("")
+    setRemoteSaveSuccess(false)
+    try {
+      await fetch("/api/admin/backup/remote", { method: "DELETE" })
+      setRemoteHost("")
+      setRemotePort("")
+      setRemoteLastSync(null)
+    } catch {
+      // silencioso
+    } finally {
+      setRemoteDisabling(false)
+    }
   }
 
   async function handleSaveRemote() {
@@ -576,13 +593,24 @@ export default function AdminBackupPage() {
                   </div>
                   {remoteSaveError && <p className="text-sm text-red-600">{remoteSaveError}</p>}
                   {remoteSaveSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Configuración guardada.</p>}
-                  <button
-                    onClick={handleSaveRemote}
-                    disabled={remoteSaving || !remoteHost.trim()}
-                    className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {remoteSaving ? "Guardando…" : "Guardar configuración"}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveRemote}
+                      disabled={remoteSaving || !remoteHost.trim()}
+                      className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {remoteSaving ? "Guardando…" : "Guardar configuración"}
+                    </button>
+                    {remoteHost.trim() && (
+                      <button
+                        onClick={handleDisableRemote}
+                        disabled={remoteDisabling}
+                        className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {remoteDisabling ? "Desactivando…" : "Desactivar"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

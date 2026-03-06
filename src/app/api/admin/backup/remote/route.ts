@@ -27,6 +27,17 @@ function readConfig(): RemoteConfig {
   }
 }
 
+export async function DELETE(request: Request) {
+  const user = await getSessionUser(request)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const existing = readConfig()
+  const newConfig: RemoteConfig = { host: null, port: null, path: existing.path, lastSync: null }
+  writeFileSync(resolveRemoteConfigPath(), JSON.stringify(newConfig, null, 2), 'utf8')
+  return NextResponse.json({ ok: true })
+}
+
 export async function GET(request: Request) {
   const user = await getSessionUser(request)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
