@@ -63,7 +63,7 @@ Si no usas Portainer, puedes desplegar la aplicación directamente con Docker Co
    ```bash
    cat > .env <<EOF
    JWT_SECRET=$(openssl rand -base64 48)
-   HOST_PORT=3000
+   # HOST_PORT=3000                    # opcional, por defecto 3000
    # DATABASE_URL=file:/data/nav.db   # opcional, este es el valor por defecto
    # BACKUP_KEEP_COPIES=7              # opcional, número de copias a conservar
    EOF
