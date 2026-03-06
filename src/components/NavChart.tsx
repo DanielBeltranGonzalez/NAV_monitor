@@ -29,14 +29,15 @@ function formatDate(dateStr: string) {
 interface TooltipProps {
   active?: boolean
   payload?: { value: number }[]
-  label?: string
+  label?: string | number
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
+  const dateStr = label != null ? new Date(Number(label)).toISOString().slice(0, 10) : ""
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md px-3 py-2 shadow text-sm">
-      <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">{label ? formatDate(label) : ""}</p>
+      <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">{dateStr ? formatDate(dateStr) : ""}</p>
       <p className="font-semibold text-slate-800 dark:text-slate-100">
         {new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(payload[0].value)}
       </p>
@@ -53,9 +54,11 @@ export function NavChart({ data }: { data: DataPoint[] }) {
     )
   }
 
+  const chartData = data.map((p) => ({ ...p, timestamp: new Date(p.date).getTime() }))
+
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+      <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="navGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
@@ -64,8 +67,11 @@ export function NavChart({ data }: { data: DataPoint[] }) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
         <XAxis
-          dataKey="date"
-          tickFormatter={formatDate}
+          dataKey="timestamp"
+          type="number"
+          scale="time"
+          domain={['dataMin', 'dataMax']}
+          tickFormatter={(ts) => formatDate(new Date(ts).toISOString().slice(0, 10))}
           tick={{ fontSize: 11, fill: "#94a3b8" }}
           tickLine={false}
           axisLine={false}
