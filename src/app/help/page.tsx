@@ -9,7 +9,7 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
         <Icon className="h-5 w-5 text-emerald-500 shrink-0" />
         <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
       </div>
-      <div className="text-sm text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed text-justify">
+      <div className="text-sm text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
         {children}
       </div>
     </div>

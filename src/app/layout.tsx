@@ -51,7 +51,7 @@ export default async function RootLayout({
             <NavSidebar isAdmin={isAdmin} />
             <div className="flex-1 flex flex-col">
               <TopBar userEmail={userEmail} lastLoginAt={lastLoginAt?.toISOString() ?? null} />
-              <main className="flex-1 p-8 bg-background">
+              <main className="flex-1 p-8 bg-background text-justify">
                 {children}
               </main>
             </div>
