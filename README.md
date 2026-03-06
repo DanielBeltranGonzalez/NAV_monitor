@@ -3,7 +3,7 @@
 Aplicación web para registrar y visualizar el valor liquidativo (NAV) de tus inversiones a lo largo del tiempo.
 Construida con Next.js 16, SQLite (Prisma) y Tailwind CSS v4.
 
-**Versión actual:** 1.8.20 · **Imagen Docker:** `tacombel/nav-monitor:latest`
+**Versión actual:** 1.8.21 · **Imagen Docker:** `tacombel/nav-monitor:latest`
 
 ---
 

@@ -3,11 +3,13 @@ set -e
 
 echo "Aplicando migraciones de base de datos..."
 npx prisma migrate deploy
+# La BD la crea Prisma como root; cedemos la propiedad a nextjs
+chown -R nextjs:nodejs /data 2>/dev/null || true
 
 # Backup automático nocturno
 BACKUP_KEEP_COPIES=${BACKUP_KEEP_COPIES:-7}
-mkdir -p /data/backups
-mkdir -p /data/ssh && chmod 700 /data/ssh
+mkdir -p /data/backups && chown nextjs:nodejs /data/backups
+mkdir -p /data/ssh && chmod 700 /data/ssh && chown nextjs:nodejs /data/ssh
 
 if command -v crond >/dev/null 2>&1 && [ -w /etc/crontabs ]; then
   # Script de backup con detección de cambios
@@ -43,4 +45,4 @@ else
 fi
 
 echo "Iniciando NAV Monitor..."
-exec npm start
+exec su-exec nextjs npm start
