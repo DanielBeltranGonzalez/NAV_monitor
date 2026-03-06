@@ -48,23 +48,29 @@ export async function GET(request: Request) {
 
 const SQLITE_MAGIC = 'SQLite format 3\0'
 const MAX_SIZE = 100 * 1024 * 1024 // 100 MB
-const REQUIRED_TABLES = ['User', 'Bank', 'Investment', 'AuditLog', 'InvestmentValue']
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
 
-function validateSchema(buffer: Buffer): { ok: boolean; missing?: string[] } {
+function getTablesFromFile(dbPath: string): string[] {
+  const db = new DatabaseSync(dbPath, { open: true })
+  try {
+    const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
+    return rows.map(r => r.name)
+  } finally {
+    db.close()
+  }
+}
+
+function validateSchema(buffer: Buffer, currentDbPath: string): { ok: boolean; missing?: string[] } {
   const tmpPath = resolve(tmpdir(), `nav_schema_check_${Date.now()}.db`)
   try {
     writeFileSync(tmpPath, buffer)
-    // node:sqlite está disponible en Node.js 22+ (experimental)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { DatabaseSync } = require('node:sqlite') as typeof import('node:sqlite')
-    const db = new DatabaseSync(tmpPath, { open: true })
-    const rows = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
-    db.close()
-    const existing = rows.map(r => r.name)
-    const missing = REQUIRED_TABLES.filter(t => !existing.includes(t))
+    const required = getTablesFromFile(currentDbPath)
+    const existing = getTablesFromFile(tmpPath)
+    const missing = required.filter(t => !existing.includes(t))
     return missing.length === 0 ? { ok: true } : { ok: false, missing }
   } catch {
-    return { ok: false, missing: REQUIRED_TABLES }
+    return { ok: false }
   } finally {
     try { unlinkSync(tmpPath) } catch { /* ignore */ }
   }
@@ -117,8 +123,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'El archivo no es una base de datos SQLite válida' }, { status: 400 })
   }
 
-  // Validar que el schema contenga todas las tablas requeridas
-  const schemaCheck = validateSchema(buffer)
+  const dbPath = resolveDbPath()
+  if (!dbPath) {
+    return NextResponse.json({ error: 'No se encontró la ruta de la base de datos' }, { status: 500 })
+  }
+
+  // Validar que el backup contiene al menos las mismas tablas que la BD activa
+  const schemaCheck = validateSchema(buffer, dbPath)
   if (!schemaCheck.ok) {
     const missing = schemaCheck.missing?.join(', ') ?? 'desconocidas'
     return NextResponse.json(
@@ -126,12 +137,6 @@ export async function POST(request: Request) {
       { status: 400 }
     )
   }
-
-  const dbPath = resolveDbPath()
-  if (!dbPath) {
-    return NextResponse.json({ error: 'No se encontró la ruta de la base de datos' }, { status: 500 })
-  }
-
   await prisma.$disconnect()
 
   try {
