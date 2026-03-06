@@ -46,11 +46,11 @@ export default function HelpPage() {
       <Section icon={Building2} title="Bancos">
         <p>Los bancos representan las entidades financieras o brokers donde tienes tus inversiones (por ejemplo, Selfbank, eToro, Degiro).</p>
         <p>Desde la sección <strong>Bancos</strong> puedes crear, editar y eliminar bancos. Un banco no puede eliminarse si tiene inversiones asociadas.</p>
+        <p className="text-slate-500 dark:text-slate-500 italic">Nota: un "banco" no tiene por qué ser una institución financiera — es simplemente una agrupación de inversiones. Por ejemplo, puedes crear un banco llamado <strong className="not-italic text-slate-600 dark:text-slate-400">Patrimonio</strong> para registrar el valor de tu coche, tu vivienda u otros bienes, y hacer seguimiento de su evolución igual que con cualquier otro activo.</p>
       </Section>
 
       <Section icon={List} title="Inversiones">
         <p>Cada inversión representa un fondo, ETF, acción u otro activo que quieres monitorizar. Siempre pertenece a un banco.</p>
-        <p className="text-slate-500 dark:text-slate-500 italic">Nota: un "banco" no tiene por qué ser una institución financiera — es simplemente una agrupación de inversiones. Por ejemplo, puedes crear un banco llamado <strong className="not-italic text-slate-600 dark:text-slate-400">Patrimonio</strong> para registrar el valor de tu coche, tu vivienda u otros bienes, y hacer seguimiento de su evolución igual que con cualquier otro activo.</p>
         <p>Al crear una inversión puedes añadir un <strong>comentario</strong> opcional que aparecerá como tooltip en el dashboard.</p>
         <p>La lista de inversiones muestra el último valor registrado y la fecha correspondiente.</p>
       </Section>
