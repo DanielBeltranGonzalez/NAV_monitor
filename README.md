@@ -1,7 +1,22 @@
 # NAV Monitor
 
-Aplicación web para registrar y visualizar el valor liquidativo (NAV) de tus inversiones.
-Construida con Next.js, SQLite (Prisma) y Tailwind CSS.
+Aplicación web para registrar y visualizar el valor liquidativo (NAV) de tus inversiones a lo largo del tiempo.
+Construida con Next.js 16, SQLite (Prisma) y Tailwind CSS v4.
+
+**Versión actual:** 1.8.9 · **Imagen Docker:** `tacombel/nav-monitor:latest`
+
+---
+
+## Funcionalidades
+
+- Gestión de **bancos** (agrupaciones de inversiones: brokers, patrimonio, etc.)
+- Gestión de **inversiones** por banco
+- Registro periódico del **valor NAV** de cada inversión
+- **Dashboard** con comparativas vs. valor anterior, mes anterior y año anterior, con tasa anualizada
+- Vista resumen del portfolio por banco con gráfica de evolución histórica
+- **Backups** manuales y automáticos (Docker), con sincronización remota via rsync/SSH
+- **Multi-usuario** con roles USER y ADMIN
+- Modo oscuro / claro
 
 ---
 
@@ -48,7 +63,6 @@ curl -O https://raw.githubusercontent.com/DanielBeltranGonzalez/NAV_monitor/main
 cat > .env <<EOF
 JWT_SECRET=$(openssl rand -base64 48)
 HOST_PORT=3000
-# DB_ENCRYPTION_KEY=$(openssl rand -hex 32)   # descomentar para cifrar la BD
 EOF
 
 docker compose up -d
@@ -76,81 +90,39 @@ docker compose pull && docker compose up -d
 
 ---
 
-## Migraciones de base de datos
-
-Las migraciones se aplican **automáticamente en cada arranque** del contenedor.
-
-- **Sin `DB_ENCRYPTION_KEY`:** se usa `prisma migrate deploy` (driver SQLite nativo).
-- **Con `DB_ENCRYPTION_KEY`:** se usa `npm run db:migrate:encrypted` (driver libSQL cifrado).
-
-El script de arranque detecta automáticamente cuál usar según la presencia de la variable.
-
-### Aplicar una migración manualmente (si fuera necesario)
-
-**Sin cifrado:**
-```bash
-docker exec -it nav-monitor npx prisma migrate deploy
-```
-
-**Con cifrado:**
-```bash
-docker exec -it nav-monitor npm run db:migrate:encrypted
-```
-
-### Consultar el estado de las migraciones (solo sin cifrado)
-
-```bash
-docker exec -it nav-monitor npx prisma migrate status
-```
-
-### Acceder a la base de datos (solo para diagnóstico)
-
-Los datos están en el volumen `nav_data`. Para inspeccionarlos se puede ejecutar Prisma Studio temporalmente (requiere BD sin cifrar):
-
-```bash
-docker exec -it nav-monitor npx prisma studio
-```
-
----
-
 ## Copias de seguridad
 
 ### Backup manual desde el panel de administración
 
-Los administradores pueden descargar una copia de la base de datos en cualquier momento desde **Admin → Backups**. El fichero descargado contiene todos los datos (usuarios, bancos, inversiones y valores históricos) y puede usarse para restaurar la base de datos.
+Los administradores pueden descargar una copia de la base de datos en cualquier momento desde **Admin → Backups**. El fichero descargado contiene todos los datos (usuarios, bancos, inversiones y valores históricos) y puede usarse para restaurar la base de datos desde la misma pantalla.
 
 ### Backup automático (Docker)
 
-En entornos Docker, el contenedor ejecuta automáticamente una copia de seguridad cada noche a las **02:00**. Los backups se guardan en `/data/backups/` dentro del volumen persistente.
+En entornos Docker, el contenedor ejecuta automáticamente una copia de seguridad cada noche a las **02:00**, pero solo si la base de datos ha cambiado desde el último backup (comparación por hash SHA-256). Los backups se guardan en `/data/backups/` dentro del volumen persistente.
 
-El número de días de retención es configurable mediante la variable de entorno `BACKUP_KEEP_DAYS` (por defecto: 7 días).
+El número de copias a conservar es configurable mediante la variable de entorno `BACKUP_KEEP_COPIES` (por defecto: 7 copias).
 
-> **Nota:** si la BD está cifrada, los backups también lo estarán. Asegúrate de guardar `DB_ENCRYPTION_KEY` en un lugar seguro.
+### Sincronización remota
+
+Los backups pueden sincronizarse automáticamente con un servidor externo via **rsync/SSH**:
+
+1. Desde **Admin → Backups**, generar una clave SSH.
+2. Añadir la clave pública al servidor destino.
+3. Configurar el host remoto y la ruta destino.
+4. La sincronización se ejecuta automáticamente tras cada backup nocturno.
 
 ### Restaurar un backup
 
-Para restaurar un backup en un contenedor Docker en ejecución:
+Desde la pantalla de administración de backups puedes restaurar cualquier copia guardada en el servidor con un solo clic. También puedes subir un fichero `.db` externo.
 
-1. Detener la aplicación (o poner el stack en pausa desde Portainer).
-2. Copiar el fichero `.db` al volumen, reemplazando la base de datos actual:
+Para restaurar manualmente en un contenedor Docker:
 
-   ```bash
-   docker cp nav_backup_FECHA.db nav-monitor:/data/nav.db
-   ```
-
-3. Reiniciar el contenedor.
+```bash
+docker cp nav_backup_FECHA.db nav-monitor:/data/nav.db
+docker restart nav-monitor
+```
 
 > **Importante:** la restauración sobreescribe todos los datos actuales. Descarga un backup reciente antes de restaurar.
-
----
-
-## Cifrado de la base de datos
-
-> **Estado actual:** el cifrado AES-256 a nivel de archivo requiere actualizar Prisma a v7, lo que implica cambios de arquitectura significativos. Esta funcionalidad está **pendiente** para una versión futura.
->
-> Los scripts `scripts/db-to-encrypted.ts` y `scripts/db-apply-migrations.ts` están disponibles en el repositorio como utilidades independientes, pero la aplicación **no puede abrir** una BD cifrada con la versión actual de Prisma (5.x).
->
-> Mientras tanto, la protección de los datos en reposo puede realizarse a nivel de sistema operativo (cifrado del volumen Docker o del disco del servidor).
 
 ---
 
@@ -158,10 +130,28 @@ Para restaurar un backup en un contenedor Docker en ejecución:
 
 | Variable | Descripción | Por defecto |
 |---|---|---|
-| `JWT_SECRET` | Secreto para firmar los tokens de sesión. **Obligatorio cambiarlo.** | `dev-secret-change-in-production` |
+| `JWT_SECRET` | Secreto para firmar los tokens de sesión. **Obligatorio en producción.** | — (error si no se define) |
 | `HOST_PORT` | Puerto del host donde se expone la aplicación | `3000` |
 | `DATABASE_URL` | Ruta a la base de datos SQLite | `file:/data/nav.db` |
-| `BACKUP_KEEP_DAYS` | Días de retención de backups automáticos | `7` |
+| `BACKUP_KEEP_COPIES` | Número de copias de backup automático a conservar | `7` |
+
+---
+
+## Migraciones de base de datos
+
+Las migraciones se aplican **automáticamente en cada arranque** del contenedor via `prisma migrate deploy`.
+
+### Aplicar una migración manualmente
+
+```bash
+docker exec -it nav-monitor npx prisma migrate deploy
+```
+
+### Consultar el estado de las migraciones
+
+```bash
+docker exec -it nav-monitor npx prisma migrate status
+```
 
 ---
 
@@ -175,7 +165,7 @@ npm install
 cp .env.example .env   # editar JWT_SECRET
 
 # Aplicar migraciones y arrancar
-npm run db:migrate -- --name init
+npx prisma migrate deploy
 npm run dev
 ```
 
@@ -185,4 +175,5 @@ Otros comandos útiles:
 npm run db:seed    # Cargar datos de prueba
 npm run db:studio  # Prisma Studio (interfaz visual de la BD)
 npm test           # Ejecutar tests
+npm run build      # Build de producción
 ```
