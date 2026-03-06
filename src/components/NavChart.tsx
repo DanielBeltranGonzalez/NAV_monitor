@@ -1,5 +1,6 @@
 "use client"
 
+import { useId, useMemo } from "react"
 import {
   AreaChart,
   Area,
@@ -46,6 +47,12 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function NavChart({ data }: { data: DataPoint[] }) {
+  const gradientId = useId()
+  const chartData = useMemo(
+    () => data.map((p) => ({ ...p, timestamp: new Date(p.date).getTime() })),
+    [data]
+  )
+
   if (data.length < 2) {
     return (
       <div className="flex items-center justify-center h-40 text-slate-400 text-sm">
@@ -54,13 +61,11 @@ export function NavChart({ data }: { data: DataPoint[] }) {
     )
   }
 
-  const chartData = data.map((p) => ({ ...p, timestamp: new Date(p.date).getTime() }))
-
   return (
     <ResponsiveContainer width="100%" height={240}>
       <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
         <defs>
-          <linearGradient id="navGradient" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
           </linearGradient>
@@ -89,8 +94,8 @@ export function NavChart({ data }: { data: DataPoint[] }) {
           dataKey="total"
           stroke="#10b981"
           strokeWidth={2}
-          fill="url(#navGradient)"
-          dot={data.length <= 20}
+          fill={`url(#${gradientId})`}
+          dot={chartData.length <= 20}
           activeDot={{ r: 4, fill: "#10b981" }}
         />
       </AreaChart>
