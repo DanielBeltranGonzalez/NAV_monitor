@@ -341,7 +341,7 @@ export default async function DashboardPage({
               </tr>
             </thead>
             <tbody>
-              {Array.from(bankGroups.entries()).map(([bank, rows]) => (
+              {Array.from(bankGroups.entries()).sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' })).map(([bank, rows]) => (
                 <Fragment key={bank}>
                   {rows.map((inv) => (
                     <DashboardRow
