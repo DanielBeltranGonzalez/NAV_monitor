@@ -1,8 +1,5 @@
-"use client"
-
-import { useState } from "react"
 import { DashboardRow } from "@/components/DashboardCard"
-import { formatEUR, formatChangePercent, formatDate } from "@/lib/formatters"
+import { formatEUR, formatChangePercent } from "@/lib/formatters"
 
 interface ValueSnapshot {
   id: number
@@ -39,6 +36,7 @@ interface BankGroup {
 interface DashboardTableProps {
   bankGroups: BankGroup[]
   chartTotals: GroupTotals
+  summary: boolean
 }
 
 function DiffSumCell({ result }: { result: DiffResult }) {
@@ -99,20 +97,9 @@ function TotalRow({ chartTotals }: { chartTotals: GroupTotals }) {
   )
 }
 
-export function DashboardTable({ bankGroups, chartTotals }: DashboardTableProps) {
-  const [summary, setSummary] = useState(false)
-
+export function DashboardTable({ bankGroups, chartTotals, summary }: DashboardTableProps) {
   return (
-    <div>
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={() => setSummary(!summary)}
-          className="text-xs px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          {summary ? "Vista completa" : "Vista resumen"}
-        </button>
-      </div>
-      <div className="rounded-md border bg-white dark:bg-slate-900 overflow-auto max-h-[calc(100vh-220px)]">
+    <div className="rounded-md border bg-white dark:bg-slate-900 overflow-auto max-h-[calc(100vh-220px)]">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground">
@@ -153,6 +140,5 @@ export function DashboardTable({ bankGroups, chartTotals }: DashboardTableProps)
           </tbody>
         </table>
       </div>
-    </div>
   )
 }

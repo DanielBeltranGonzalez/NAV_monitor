@@ -1,8 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { DashboardChart } from '@/components/DashboardChart'
-import { DashboardDatePicker } from '@/components/DashboardDatePicker'
-import { DashboardTable } from '@/components/DashboardTable'
+import { DashboardView } from '@/components/DashboardView'
 import { formatDate } from '@/lib/formatters'
 import { prisma } from '@/lib/prisma'
 import { verifyToken, COOKIE_NAME } from '@/lib/auth'
@@ -243,11 +242,6 @@ export default async function DashboardPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <DashboardDatePicker value={selectedDateStr} max={maxDateStr} />
-      </div>
-
       {dateOutliers.length > 0 && (
         <div className="mb-4 rounded-md border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 px-4 py-1.5 text-sm text-amber-800 dark:text-amber-300">
           <p className="font-semibold mb-1">
@@ -271,7 +265,9 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div>
-          <DashboardTable
+          <DashboardView
+            dateValue={selectedDateStr}
+            dateMax={maxDateStr}
             bankGroups={Array.from(bankGroups.entries())
               .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
               .map(([bank, investments]) => ({
