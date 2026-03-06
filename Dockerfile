@@ -19,6 +19,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# JWT_SECRET placeholder solo para el build; el runner exige el valor real en runtime
+ENV JWT_SECRET=build-time-placeholder
 RUN npx prisma generate
 RUN npm run build
 RUN mkdir -p public
