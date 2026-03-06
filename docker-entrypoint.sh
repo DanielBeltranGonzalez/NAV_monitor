@@ -7,6 +7,7 @@ npx prisma migrate deploy
 # Backup automático nocturno
 BACKUP_KEEP_DAYS=${BACKUP_KEEP_DAYS:-7}
 mkdir -p /data/backups
+mkdir -p /data/ssh && chmod 700 /data/ssh
 
 if command -v crond >/dev/null 2>&1 && [ -w /etc/crontabs ]; then
   # Script de backup con detección de cambios
@@ -21,6 +22,14 @@ if [ -n "$last" ] && [ "$(sha256sum "$last" | awk '{print $1}')" = "$current" ];
   exit 0
 fi
 cp "$DB" "$BACKUP_DIR/nav_$(date +%Y%m%d_%H%M%S).db"
+# Sync remoto si está configurado
+if [ -f /data/backup_remote.json ] && [ -f /data/ssh/nav_backup_rsa ]; then
+  HOST=$(sed -n 's/.*"host":"\([^"]*\)".*/\1/p' /data/backup_remote.json)
+  RPATH=$(sed -n 's/.*"path":"\([^"]*\)".*/\1/p' /data/backup_remote.json)
+  [ -n "$HOST" ] && rsync -az --mkpath \
+    -e "ssh -i /data/ssh/nav_backup_rsa -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/data/ssh/known_hosts -o BatchMode=yes" \
+    /data/backups/ "${HOST}:${RPATH:-~/nav-backups}/" || true
+fi
 SCRIPT
   chmod +x /tmp/nav-backup.sh
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect, useCallback } from "react"
-import { Download, Upload } from "lucide-react"
+import { Download, Upload, RefreshCw, Server, Key, Copy, Check } from "lucide-react"
 
 interface BackupFile {
   name: string
@@ -10,6 +10,120 @@ interface BackupFile {
 }
 
 export default function AdminBackupPage() {
+  // ── Remote sync state ──────────────────────────────────────────────────────
+  const [sshPublicKey, setSshPublicKey] = useState<string | null>(undefined as unknown as null)
+  const [sshKeyLoading, setSshKeyLoading] = useState(true)
+  const [sshKeyGenerating, setSshKeyGenerating] = useState(false)
+  const [sshKeyCopied, setSshKeyCopied] = useState(false)
+  const [sshKeyError, setSshKeyError] = useState("")
+
+  const [remoteHost, setRemoteHost] = useState("")
+  const [remotePath, setRemotePath] = useState("~/nav-backups")
+  const [remoteLastSync, setRemoteLastSync] = useState<string | null>(null)
+  const [remoteLoading, setRemoteLoading] = useState(true)
+  const [remoteSaving, setRemoteSaving] = useState(false)
+  const [remoteSaveError, setRemoteSaveError] = useState("")
+  const [remoteSaveSuccess, setRemoteSaveSuccess] = useState(false)
+
+  const [syncing, setSyncing] = useState(false)
+  const [syncOutput, setSyncOutput] = useState("")
+  const [syncError, setSyncError] = useState("")
+  const [syncSuccess, setSyncSuccess] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/admin/backup/ssh-key")
+      .then((r) => r.json())
+      .then((d) => setSshPublicKey(d.publicKey ?? null))
+      .catch(() => setSshPublicKey(null))
+      .finally(() => setSshKeyLoading(false))
+
+    fetch("/api/admin/backup/remote")
+      .then((r) => r.json())
+      .then((d) => {
+        setRemoteHost(d.host ?? "")
+        setRemotePath(d.path ?? "~/nav-backups")
+        setRemoteLastSync(d.lastSync ?? null)
+      })
+      .catch(() => {})
+      .finally(() => setRemoteLoading(false))
+  }, [])
+
+  async function handleGenerateKey() {
+    setSshKeyGenerating(true)
+    setSshKeyError("")
+    try {
+      const res = await fetch("/api/admin/backup/ssh-key", { method: "POST" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setSshKeyError(data.error ?? "Error generando clave SSH")
+        return
+      }
+      setSshPublicKey(data.publicKey)
+    } catch {
+      setSshKeyError("Error de conexión")
+    } finally {
+      setSshKeyGenerating(false)
+    }
+  }
+
+  async function handleCopyKey() {
+    if (!sshPublicKey) return
+    await navigator.clipboard.writeText(sshPublicKey)
+    setSshKeyCopied(true)
+    setTimeout(() => setSshKeyCopied(false), 2000)
+  }
+
+  async function handleSaveRemote() {
+    setRemoteSaving(true)
+    setRemoteSaveError("")
+    setRemoteSaveSuccess(false)
+    try {
+      const res = await fetch("/api/admin/backup/remote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host: remoteHost, path: remotePath }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setRemoteSaveError(data.error ?? "Error guardando configuración")
+        return
+      }
+      setRemoteSaveSuccess(true)
+    } catch {
+      setRemoteSaveError("Error de conexión")
+    } finally {
+      setRemoteSaving(false)
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true)
+    setSyncError("")
+    setSyncOutput("")
+    setSyncSuccess(false)
+    try {
+      const res = await fetch("/api/admin/backup/sync", { method: "POST" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setSyncError(data.error ?? "Error en la sincronización")
+        return
+      }
+      setSyncSuccess(true)
+      setSyncOutput(data.output ?? "")
+      setRemoteLastSync(new Date().toISOString())
+    } catch {
+      setSyncError("Error de conexión")
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  function formatDate(iso: string) {
+    const d = new Date(iso)
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  }
+
+  // ── Other state ────────────────────────────────────────────────────────────
   const [downloadLoading, setDownloadLoading] = useState(false)
   const [downloadError, setDownloadError] = useState("")
 
@@ -358,6 +472,145 @@ export default function AdminBackupPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Sincronización remota */}
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-6 space-y-5">
+        <div className="flex items-center gap-2">
+          <Server className="h-4 w-4 text-slate-400" />
+          <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200">Sincronización remota</h2>
+        </div>
+
+        {/* 1. SSH key */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <Key className="h-3.5 w-3.5 text-slate-400" />
+            <h3 className="text-sm font-medium text-slate-600 dark:text-slate-300">Clave SSH pública</h3>
+          </div>
+          {sshKeyError && <p className="text-sm text-red-600">{sshKeyError}</p>}
+          {sshKeyLoading ? (
+            <p className="text-sm text-slate-400">Cargando…</p>
+          ) : sshPublicKey ? (
+            <div className="space-y-2">
+              <textarea
+                readOnly
+                value={sshPublicKey}
+                rows={3}
+                className="w-full font-mono text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md p-2 text-slate-600 dark:text-slate-300 resize-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopyKey}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {sshKeyCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  {sshKeyCopied ? "Copiado" : "Copiar"}
+                </button>
+                <button
+                  onClick={handleGenerateKey}
+                  disabled={sshKeyGenerating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {sshKeyGenerating ? "Generando…" : "Regenerar clave"}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">
+                Añade esta clave a <code className="bg-slate-100 dark:bg-slate-700 px-1 rounded">~/.ssh/authorized_keys</code> del servidor remoto.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-slate-500 dark:text-slate-400">No hay clave SSH generada.</p>
+              <button
+                onClick={handleGenerateKey}
+                disabled={sshKeyGenerating}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+              >
+                <Key className="h-3.5 w-3.5" />
+                {sshKeyGenerating ? "Generando…" : "Generar clave SSH"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 2. Remote config */}
+        <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+          <h3 className="text-sm font-medium text-slate-600 dark:text-slate-300">Servidor destino</h3>
+          {remoteLoading ? (
+            <p className="text-sm text-slate-400">Cargando…</p>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">usuario@servidor</label>
+                  <input
+                    type="text"
+                    value={remoteHost}
+                    onChange={(e) => { setRemoteHost(e.target.value); setRemoteSaveSuccess(false) }}
+                    placeholder="user@host.example.com"
+                    className="w-full text-sm px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Ruta remota</label>
+                  <input
+                    type="text"
+                    value={remotePath}
+                    onChange={(e) => { setRemotePath(e.target.value); setRemoteSaveSuccess(false) }}
+                    placeholder="~/nav-backups"
+                    className="w-full text-sm px-3 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+              {remoteSaveError && <p className="text-sm text-red-600">{remoteSaveError}</p>}
+              {remoteSaveSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Configuración guardada.</p>}
+              <button
+                onClick={handleSaveRemote}
+                disabled={remoteSaving || !remoteHost.trim()}
+                className="px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {remoteSaving ? "Guardando…" : "Guardar configuración"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Sync now */}
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-slate-700 dark:bg-slate-600 text-white rounded-md hover:bg-slate-800 dark:hover:bg-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando…" : "Sincronizar ahora"}
+            </button>
+            <span className="text-xs text-slate-400">
+              {remoteLastSync
+                ? `Última sync: ${formatDate(remoteLastSync)}`
+                : "Sin sincronizar"}
+            </span>
+          </div>
+          {syncError && (
+            <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-3">
+              <p className="text-sm text-red-700 dark:text-red-400 font-medium mb-1">Error de sincronización</p>
+              <pre className="text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap overflow-auto max-h-32">{syncError}</pre>
+            </div>
+          )}
+          {syncSuccess && (
+            <div className="space-y-1">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">Sincronización completada.</p>
+              {syncOutput && (
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Ver output</summary>
+                  <pre className="mt-1 p-2 bg-slate-50 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300 whitespace-pre-wrap overflow-auto max-h-40">{syncOutput}</pre>
+                </details>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Backup automático */}
