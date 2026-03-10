@@ -8,10 +8,16 @@ export async function GET(request: Request) {
   if (user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { searchParams } = new URL(request.url)
-  const since = searchParams.get('since')
+  const sinceRaw = searchParams.get('since')
+  let sinceDate: Date | undefined
+  if (sinceRaw) {
+    const d = new Date(sinceRaw)
+    if (isNaN(d.getTime())) return NextResponse.json({ error: 'Parámetro since inválido' }, { status: 400 })
+    sinceDate = d
+  }
 
   const count = await prisma.auditLog.count({
-    where: since ? { createdAt: { gt: new Date(since) } } : undefined,
+    where: sinceDate ? { createdAt: { gt: sinceDate } } : undefined,
   })
 
   return NextResponse.json({ count })

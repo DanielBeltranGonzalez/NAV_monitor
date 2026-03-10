@@ -24,8 +24,8 @@ if [ -f "$LOG_FILE" ]; then
 fi
 
 if command -v crond >/dev/null 2>&1 && [ -w /etc/crontabs ]; then
-  # Script de backup con detección de cambios
-  cat > /tmp/nav-backup.sh << 'SCRIPT'
+  # Script de backup con detección de cambios (en /data para persistir entre reinicios)
+  cat > /data/nav-backup.sh << 'SCRIPT'
 #!/bin/sh
 DB=/data/nav.db
 BACKUP_DIR=/data/backups
@@ -52,9 +52,9 @@ if [ -f /data/backup_remote.json ] && [ -f /data/ssh/nav_backup_rsa ]; then
     /data/logs/ "${HOST}:${RPATH:-~/nav-backups}/logs/" || true
 fi
 SCRIPT
-  chmod +x /tmp/nav-backup.sh
+  chmod +x /data/nav-backup.sh
 
-  echo "0 2 * * * /tmp/nav-backup.sh && ls -t /data/backups/nav_*.db 2>/dev/null | tail -n +$((${BACKUP_KEEP_COPIES}+1)) | xargs rm -f" > /etc/crontabs/root
+  echo "0 2 * * * /data/nav-backup.sh && ls -t /data/backups/nav_*.db 2>/dev/null | tail -n +$((${BACKUP_KEEP_COPIES}+1)) | xargs rm -f" > /etc/crontabs/root
   crond -b
   echo "Backup automático programado (02:00 diario, retención ${BACKUP_KEEP_COPIES} copias, solo si hay cambios)"
 else

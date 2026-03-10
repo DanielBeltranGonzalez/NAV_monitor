@@ -103,17 +103,21 @@ export async function POST(request: Request) {
   }
 
   // Sincronizar logs si el directorio existe
+  let logsWarning: string | undefined
   if (existsSync('/data/logs')) {
-    spawnSync(
+    const logsResult = spawnSync(
       'rsync',
       ['-avz', '--mkpath', '-e', sshCmd, '/data/logs/', `${config.host}:${remotePath}/logs/`],
       { encoding: 'utf8', timeout: 30_000 }
     )
+    if (logsResult.error || (logsResult.status !== 0 && logsResult.status !== null)) {
+      logsWarning = `Backups sincronizados, pero falló la sync de logs: ${logsResult.stderr || logsResult.error?.message || `código ${logsResult.status}`}`
+    }
   }
 
   // Actualizar lastSync
   config.lastSync = new Date().toISOString()
   writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
 
-  return NextResponse.json({ ok: true, output: result.stdout })
+  return NextResponse.json({ ok: true, output: result.stdout, warning: logsWarning })
 }
