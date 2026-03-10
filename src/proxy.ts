@@ -171,6 +171,7 @@ export async function proxy(request: NextRequest) {
 
       response.cookies.set(COOKIE_NAME, newToken, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         path: '/',
         maxAge: SESSION_MAX_AGE,

@@ -32,7 +32,7 @@ function runRsync(args: string[], timeoutMs: number): Promise<{ stdout: string; 
   return new Promise((resolve) => {
     let stdout = ''
     let stderr = ''
-    const child = spawn('rsync', args, { encoding: 'utf8' } as never)
+    const child = spawn('rsync', args)
 
     child.stdout.on('data', (d: Buffer) => { stdout += d.toString() })
     child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })

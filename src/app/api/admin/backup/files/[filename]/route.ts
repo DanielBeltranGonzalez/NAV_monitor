@@ -74,8 +74,10 @@ export async function GET(
   let fileSize: number
   try {
     fileSize = statSync(filePath).size
-  } catch {
-    return NextResponse.json({ error: 'Backup no encontrado' }, { status: 404 })
+  } catch (err: unknown) {
+    const code = (err as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return NextResponse.json({ error: 'Backup no encontrado' }, { status: 404 })
+    return NextResponse.json({ error: 'Error accediendo al backup' }, { status: 500 })
   }
 
   const fileStream = createReadStream(filePath)

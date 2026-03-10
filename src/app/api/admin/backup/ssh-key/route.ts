@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
-import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync } from 'fs'
 import { resolve } from 'path'
 import { execFileSync } from 'child_process'
 
 function resolveSSHDir(): string {
   const dir = existsSync('/data') ? '/data/ssh' : resolve(process.cwd(), 'prisma/ssh')
   mkdirSync(dir, { recursive: true, mode: 0o700 })
+  // Migración: renombrar clave antigua nav_backup_rsa → nav_backup_ed25519
+  const oldKey = resolve(dir, 'nav_backup_rsa')
+  const newKey = resolve(dir, 'nav_backup_ed25519')
+  if (existsSync(oldKey) && !existsSync(newKey)) {
+    try {
+      renameSync(oldKey, newKey)
+      if (existsSync(`${oldKey}.pub`)) renameSync(`${oldKey}.pub`, `${newKey}.pub`)
+    } catch { /* no crítico */ }
+  }
   return dir
 }
 
