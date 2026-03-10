@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
-import { existsSync, mkdirSync, readFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs'
 import { resolve } from 'path'
 import { execFileSync } from 'child_process'
 
@@ -33,6 +33,10 @@ export async function POST(request: Request) {
 
   const sshDir = resolveSSHDir()
   const keyPath = resolve(sshDir, 'nav_backup_rsa')
+
+  // Eliminar claves existentes para evitar prompt interactivo de sobreescritura
+  try { unlinkSync(keyPath) } catch { /* no existía */ }
+  try { unlinkSync(`${keyPath}.pub`) } catch { /* no existía */ }
 
   try {
     execFileSync(
