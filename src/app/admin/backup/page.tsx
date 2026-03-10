@@ -22,6 +22,7 @@ export default function AdminBackupPage() {
   const [remotePath, setRemotePath] = useState("~/nav-backups")
   const [remoteLastSync, setRemoteLastSync] = useState<string | null>(null)
   const [remoteLoading, setRemoteLoading] = useState(true)
+  const [savedRemoteHost, setSavedRemoteHost] = useState<string | null>(null)
   const [remoteSaving, setRemoteSaving] = useState(false)
   const [remoteSaveError, setRemoteSaveError] = useState("")
   const [remoteSaveSuccess, setRemoteSaveSuccess] = useState(false)
@@ -47,6 +48,7 @@ export default function AdminBackupPage() {
         setRemotePort(d.port ? String(d.port) : "")
         setRemotePath(d.path ?? "~/nav-backups")
         setRemoteLastSync(d.lastSync ?? null)
+        setSavedRemoteHost(d.host ?? null)
       })
       .catch(() => {})
       .finally(() => setRemoteLoading(false))
@@ -92,6 +94,7 @@ export default function AdminBackupPage() {
       setRemotePort("")
       setRemoteLastSync(null)
       setRemoteDisableConfirming(false)
+      setSavedRemoteHost(null)
     } catch {
       setRemoteSaveError("Error de conexión")
     } finally {
@@ -115,6 +118,7 @@ export default function AdminBackupPage() {
         return
       }
       setRemoteSaveSuccess(true)
+      setSavedRemoteHost(remoteHost.trim())
     } catch {
       setRemoteSaveError("Error de conexión")
     } finally {
@@ -560,6 +564,12 @@ export default function AdminBackupPage() {
             {/* 2. Remote config */}
             <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
               <h3 className="text-sm font-medium text-slate-600 dark:text-slate-300">Servidor destino</h3>
+              {savedRemoteHost && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Configurado:</span>
+                  <code className="text-xs text-emerald-800 dark:text-emerald-300 font-mono">{savedRemoteHost}</code>
+                </div>
+              )}
               {remoteLoading ? (
                 <p className="text-sm text-slate-400">Cargando…</p>
               ) : (
