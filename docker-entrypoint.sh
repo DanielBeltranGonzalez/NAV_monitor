@@ -63,6 +63,7 @@ fi
 
 echo "Iniciando NAV Monitor..."
 # Pipe nombrado para capturar logs a fichero y mantener stdout (docker logs)
+trap 'rm -f /tmp/logpipe' EXIT
 mkfifo /tmp/logpipe
 tee -a "$LOG_FILE" < /tmp/logpipe &
 exec su-exec nextjs npm start > /tmp/logpipe 2>&1

@@ -23,6 +23,7 @@ export default function AdminLogsPage() {
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -46,9 +47,12 @@ export default function AdminLogsPage() {
     return () => clearInterval(id)
   }, [autoRefresh, fetchLogs])
 
-  // Scroll al final cuando llegan nuevos logs
+  // Scroll al final solo si el usuario ya estaba al fondo
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    const container = scrollContainerRef.current
+    if (!container) return
+    const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 40
+    if (atBottom) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [data?.lines])
 
   async function handleDownload() {
@@ -61,7 +65,9 @@ export default function AdminLogsPage() {
       const a = document.createElement("a")
       a.href = url
       a.download = "nav-monitor.log"
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } finally {
       setDownloading(false)
@@ -121,12 +127,12 @@ export default function AdminLogsPage() {
 
           {/* Log viewer */}
           <div className="bg-slate-950 rounded-lg border border-slate-700 overflow-hidden">
-            <div className="h-[60vh] overflow-y-auto p-4 font-mono text-xs leading-5">
+            <div ref={scrollContainerRef} className="h-[60vh] overflow-y-auto p-4 font-mono text-xs leading-5">
               {data.lines.length === 0 ? (
                 <p className="text-slate-500">El fichero de log está vacío.</p>
               ) : (
                 data.lines.map((line, i) => (
-                  <div key={i} className="text-slate-300 whitespace-pre-wrap break-all hover:bg-slate-900 px-1 -mx-1 rounded">
+                  <div key={`${i}-${line.slice(0, 20)}`} className="text-slate-300 whitespace-pre-wrap break-all hover:bg-slate-900 px-1 -mx-1 rounded">
                     {line}
                   </div>
                 ))

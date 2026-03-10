@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { BarChart3, TrendingUp, PlusCircle, List, Building2, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList, HelpCircle, Terminal } from "lucide-react"
 import { cn } from "@/lib/utils"
-import pkg from "../../package.json"
 
 const EVENTS_LAST_READ_KEY = "eventsLastRead"
 
@@ -160,7 +159,7 @@ export function NavSidebar({ isAdmin }: NavSidebarProps) {
       </div>
       <div className="p-4 border-t border-slate-700">
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v{pkg.version}</p>
+          <p>v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>

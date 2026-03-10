@@ -64,9 +64,11 @@ export async function POST(request: Request) {
     )
   }
 
-  const remotePath = typeof body.path === 'string' && body.path.trim()
-    ? body.path.trim()
-    : '~/nav-backups'
+  const rawPath = typeof body.path === 'string' ? body.path.trim() : ''
+  const remotePath = rawPath || '~/nav-backups'
+  if (!/^[\w.~\-/]+$/.test(remotePath)) {
+    return NextResponse.json({ error: 'Ruta remota inválida' }, { status: 400 })
+  }
 
   let port: number | null = null
   if (body.port !== undefined && body.port !== null && body.port !== '') {

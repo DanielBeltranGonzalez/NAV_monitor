@@ -11,7 +11,7 @@ interface BackupFile {
 
 export default function AdminBackupPage() {
   // ── Remote sync state ──────────────────────────────────────────────────────
-  const [sshPublicKey, setSshPublicKey] = useState<string | null>(undefined as unknown as null)
+  const [sshPublicKey, setSshPublicKey] = useState<string | null>(null)
   const [sshKeyLoading, setSshKeyLoading] = useState(true)
   const [sshKeyGenerating, setSshKeyGenerating] = useState(false)
   const [sshKeyCopied, setSshKeyCopied] = useState(false)
@@ -206,7 +206,9 @@ export default function AdminBackupPage() {
       const a = document.createElement("a")
       a.href = url
       a.download = filename
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch {
       setDownloadError("Error de conexión")
@@ -253,7 +255,9 @@ export default function AdminBackupPage() {
       const a = document.createElement("a")
       a.href = url
       a.download = filename
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } finally {
       setDownloadingFile(null)

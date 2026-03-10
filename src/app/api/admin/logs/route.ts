@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
+import { logEvent } from '@/lib/audit'
 import { existsSync, createReadStream, statSync } from 'fs'
 import { execFileSync } from 'child_process'
 
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
   const stat = statSync(LOG_PATH)
 
   if (download) {
+    await logEvent('LOGS_DOWNLOADED', user.email)
     // Stream directo del fichero sin cargarlo en memoria
     const fileStream = createReadStream(LOG_PATH)
     const readable = new ReadableStream({
