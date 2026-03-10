@@ -76,16 +76,11 @@ export async function POST(request: Request) {
   const portNum = config.port ? parseInt(String(config.port), 10) : NaN
   const portFlag = !isNaN(portNum) && portNum > 0 && portNum <= 65535 ? ` -p ${portNum}` : ''
 
+  const sshCmd = `ssh -i ${keyPath}${portFlag} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${knownHostsPath} -o BatchMode=yes`
+
   const result = spawnSync(
     'rsync',
-    [
-      '-avz',
-      '--mkpath',
-      '-e',
-      `ssh -i ${keyPath}${portFlag} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${knownHostsPath} -o BatchMode=yes`,
-      backupDir + '/',
-      `${config.host}:${remotePath}/`,
-    ],
+    ['-avz', '--mkpath', '-e', sshCmd, backupDir + '/', `${config.host}:${remotePath}/`],
     { encoding: 'utf8', timeout: 60_000 }
   )
 
@@ -104,6 +99,15 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { ok: false, error: result.stderr || result.stdout || `rsync salió con código ${result.status}` },
       { status: 500 }
+    )
+  }
+
+  // Sincronizar logs si el directorio existe
+  if (existsSync('/data/logs')) {
+    spawnSync(
+      'rsync',
+      ['-avz', '--mkpath', '-e', sshCmd, '/data/logs/', `${config.host}:${remotePath}/logs/`],
+      { encoding: 'utf8', timeout: 30_000 }
     )
   }
 

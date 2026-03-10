@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { BarChart3, TrendingUp, PlusCircle, List, Building2, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList, HelpCircle } from "lucide-react"
+import { BarChart3, TrendingUp, PlusCircle, List, Building2, Users, ScrollText, UserCircle, DatabaseBackup, ClipboardList, HelpCircle, Terminal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import pkg from "../../package.json"
 
@@ -105,6 +105,18 @@ export function NavSidebar({ isAdmin }: NavSidebarProps) {
           >
             <DatabaseBackup className="h-4 w-4" />
             Backups
+          </Link>
+          <Link
+            href="/admin/logs"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              pathname === '/admin/logs'
+                ? "bg-emerald-600 text-white"
+                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            )}
+          >
+            <Terminal className="h-4 w-4" />
+            Logs
           </Link>
         </div>
       )}

@@ -11,6 +11,18 @@ BACKUP_KEEP_COPIES=${BACKUP_KEEP_COPIES:-7}
 mkdir -p /data/backups && chown nextjs:nodejs /data/backups
 mkdir -p /data/ssh && chmod 700 /data/ssh && chown nextjs:nodejs /data/ssh
 
+# Logs del servidor
+mkdir -p /data/logs && chown nextjs:nodejs /data/logs
+LOG_FILE=/data/logs/nav.log
+# Rotación simple: si el log supera 10 MB, renombrar a nav.log.1
+if [ -f "$LOG_FILE" ]; then
+  LOG_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
+  if [ "$LOG_SIZE" -gt 10485760 ]; then
+    mv "$LOG_FILE" "${LOG_FILE}.1"
+    echo "Log rotado (superó 10 MB)"
+  fi
+fi
+
 if command -v crond >/dev/null 2>&1 && [ -w /etc/crontabs ]; then
   # Script de backup con detección de cambios
   cat > /tmp/nav-backup.sh << 'SCRIPT'
@@ -30,9 +42,14 @@ if [ -f /data/backup_remote.json ] && [ -f /data/ssh/nav_backup_rsa ]; then
   RPATH=$(sed -n 's/.*"path":"\([^"]*\)".*/\1/p' /data/backup_remote.json)
   PORT=$(sed -n 's/.*"port":\([0-9]*\).*/\1/p' /data/backup_remote.json)
   PORT_FLAG=$([ -n "$PORT" ] && echo "-p $PORT" || echo "")
+  SSH_CMD="ssh -i /data/ssh/nav_backup_rsa $PORT_FLAG -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/data/ssh/known_hosts -o BatchMode=yes"
   [ -n "$HOST" ] && rsync -az --mkpath \
-    -e "ssh -i /data/ssh/nav_backup_rsa $PORT_FLAG -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/data/ssh/known_hosts -o BatchMode=yes" \
+    -e "$SSH_CMD" \
     /data/backups/ "${HOST}:${RPATH:-~/nav-backups}/" || true
+  # Sincronizar logs también
+  [ -n "$HOST" ] && [ -d /data/logs ] && rsync -az --mkpath \
+    -e "$SSH_CMD" \
+    /data/logs/ "${HOST}:${RPATH:-~/nav-backups}/logs/" || true
 fi
 SCRIPT
   chmod +x /tmp/nav-backup.sh
@@ -45,4 +62,7 @@ else
 fi
 
 echo "Iniciando NAV Monitor..."
-exec su-exec nextjs npm start
+# Pipe nombrado para capturar logs a fichero y mantener stdout (docker logs)
+mkfifo /tmp/logpipe
+tee -a "$LOG_FILE" < /tmp/logpipe &
+exec su-exec nextjs npm start > /tmp/logpipe 2>&1
