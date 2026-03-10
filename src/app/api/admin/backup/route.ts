@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
 import { logEvent } from '@/lib/audit'
-import { readFileSync, writeFileSync, unlinkSync } from 'fs'
+import { createReadStream, readFileSync, statSync, writeFileSync, unlinkSync } from 'fs'
 import { execFileSync } from 'child_process'
 import { resolve } from 'path'
 import { tmpdir } from 'os'
@@ -19,17 +19,19 @@ export async function GET(request: Request) {
     resolve(process.cwd(), 'prisma/prisma/nav.db'),
   ]
 
-  let dbBuffer: Buffer | null = null
-  for (const path of candidates) {
+  let dbPath: string | null = null
+  let dbSize = 0
+  for (const p of candidates) {
     try {
-      dbBuffer = readFileSync(path)
+      dbSize = statSync(p).size
+      dbPath = p
       break
     } catch {
       // siguiente candidato
     }
   }
 
-  if (!dbBuffer) {
+  if (!dbPath) {
     return NextResponse.json({ error: 'No se encontró la base de datos' }, { status: 500 })
   }
 
@@ -38,11 +40,21 @@ export async function GET(request: Request) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const filename = `nav_backup_${timestamp}.db`
 
-  return new NextResponse(new Uint8Array(dbBuffer), {
+  const fileStream = createReadStream(dbPath)
+  const readable = new ReadableStream({
+    start(controller) {
+      fileStream.on('data', (chunk) => controller.enqueue(chunk))
+      fileStream.on('end', () => controller.close())
+      fileStream.on('error', (err) => controller.error(err))
+    },
+  })
+
+  return new NextResponse(readable, {
     status: 200,
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': String(dbSize),
     },
   })
 }
@@ -118,7 +130,7 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await file.arrayBuffer())
 
   // Validar magic bytes SQLite
-  const magic = buffer.slice(0, 16).toString('binary')
+  const magic = buffer.subarray(0, 16).toString('binary')
   if (magic !== SQLITE_MAGIC) {
     return NextResponse.json({ error: 'El archivo no es una base de datos SQLite válida' }, { status: 400 })
   }
@@ -145,7 +157,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No se pudo escribir la base de datos' }, { status: 500 })
   }
 
-  await logEvent('BACKUP_RESTORED', user.email)
+  try { await logEvent('BACKUP_RESTORED', user.email) } catch { /* no crítico */ }
 
   return NextResponse.json({ ok: true })
 }

@@ -26,6 +26,8 @@ jest.mock('next/server', () => {
 
 jest.mock('fs', () => ({
   readFileSync: jest.fn().mockReturnValue(Buffer.from('fake-db-content')),
+  statSync: jest.fn().mockReturnValue({ size: 15 }),
+  createReadStream: jest.fn().mockReturnValue({ on: jest.fn().mockReturnThis() }),
 }))
 
 jest.mock('path', () => ({
@@ -47,7 +49,7 @@ jest.mock('@/lib/auth', () => ({
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const { getSessionUser } = jest.requireMock('@/lib/auth')
-const { readFileSync } = jest.requireMock('fs')
+const { readFileSync, statSync } = jest.requireMock('fs')
 const { prisma } = jest.requireMock('@/lib/prisma')
 
 function req() {
@@ -59,6 +61,7 @@ function req() {
 describe('GET /api/admin/backup', () => {
   beforeEach(() => {
     readFileSync.mockReturnValue(Buffer.from('fake-db-content'))
+    statSync.mockReturnValue({ size: 15 })
   })
 
   it('sin sesión → 401', async () => {
@@ -81,7 +84,7 @@ describe('GET /api/admin/backup', () => {
   })
 
   it('BD no encontrada → 500', async () => {
-    readFileSync.mockImplementation(() => { throw new Error('ENOENT') })
+    statSync.mockImplementation(() => { throw new Error('ENOENT') })
     const res = await GET(req()) as any
     expect(res.status).toBe(500)
   })

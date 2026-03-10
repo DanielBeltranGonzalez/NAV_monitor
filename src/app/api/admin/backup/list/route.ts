@@ -18,13 +18,18 @@ export async function GET(request: Request) {
   const backupDir = resolveBackupDir()
   if (!backupDir) return NextResponse.json([])
 
-  const files = readdirSync(backupDir)
-    .filter((f) => VALID_FILENAME.test(f))
-    .map((name) => {
-      const stat = statSync(resolve(backupDir, name))
-      return { name, size: stat.size, createdAt: stat.mtime.toISOString() }
-    })
-    .sort((a, b) => b.name.localeCompare(a.name))
+  let files: { name: string; size: number; createdAt: string }[]
+  try {
+    files = readdirSync(backupDir)
+      .filter((f) => VALID_FILENAME.test(f))
+      .map((name) => {
+        const stat = statSync(resolve(backupDir, name))
+        return { name, size: stat.size, createdAt: stat.mtime.toISOString() }
+      })
+      .sort((a, b) => b.name.localeCompare(a.name))
+  } catch {
+    return NextResponse.json({ error: 'Error leyendo el directorio de backups' }, { status: 500 })
+  }
 
   return NextResponse.json(files)
 }
