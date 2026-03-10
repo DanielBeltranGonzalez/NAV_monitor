@@ -45,7 +45,7 @@ interface DashboardViewProps {
 }
 
 export function DashboardView({ dateValue, dateMax, bankGroups, chartTotals }: DashboardViewProps) {
-  const [summary, setSummary] = useState(false)
+  const [summary, setSummary] = useState(true)
 
   return (
     <>
