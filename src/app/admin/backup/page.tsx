@@ -526,8 +526,9 @@ export default function AdminBackupPage() {
                   <textarea
                     readOnly
                     value={sshPublicKey}
-                    rows={2}
-                    className="w-full font-mono text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md p-2 text-slate-600 dark:text-slate-300 resize-none"
+                    rows={3}
+                    wrap="off"
+                    className="w-full font-mono text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md p-2 text-slate-600 dark:text-slate-300 resize-none overflow-x-auto"
                   />
                   <div className="flex gap-2">
                     <button
