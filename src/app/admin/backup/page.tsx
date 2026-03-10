@@ -23,6 +23,7 @@ export default function AdminBackupPage() {
   const [remoteLastSync, setRemoteLastSync] = useState<string | null>(null)
   const [remoteLoading, setRemoteLoading] = useState(true)
   const [savedRemoteHost, setSavedRemoteHost] = useState<string | null>(null)
+  const [savedRemotePort, setSavedRemotePort] = useState<string | null>(null)
   const [remoteSaving, setRemoteSaving] = useState(false)
   const [remoteSaveError, setRemoteSaveError] = useState("")
   const [remoteSaveSuccess, setRemoteSaveSuccess] = useState(false)
@@ -49,6 +50,7 @@ export default function AdminBackupPage() {
         setRemotePath(d.path ?? "~/nav-backups")
         setRemoteLastSync(d.lastSync ?? null)
         setSavedRemoteHost(d.host ?? null)
+        setSavedRemotePort(d.port ? String(d.port) : null)
       })
       .catch(() => {})
       .finally(() => setRemoteLoading(false))
@@ -95,6 +97,7 @@ export default function AdminBackupPage() {
       setRemoteLastSync(null)
       setRemoteDisableConfirming(false)
       setSavedRemoteHost(null)
+      setSavedRemotePort(null)
     } catch {
       setRemoteSaveError("Error de conexión")
     } finally {
@@ -119,6 +122,7 @@ export default function AdminBackupPage() {
       }
       setRemoteSaveSuccess(true)
       setSavedRemoteHost(remoteHost.trim())
+      setSavedRemotePort(remotePort.trim() || null)
     } catch {
       setRemoteSaveError("Error de conexión")
     } finally {
@@ -567,7 +571,9 @@ export default function AdminBackupPage() {
               {savedRemoteHost && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
                   <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Configurado:</span>
-                  <code className="text-xs text-emerald-800 dark:text-emerald-300 font-mono">{savedRemoteHost}</code>
+                  <code className="text-xs text-emerald-800 dark:text-emerald-300 font-mono">
+                    {savedRemoteHost}{savedRemotePort ? `:${savedRemotePort}` : ""}
+                  </code>
                 </div>
               )}
               {remoteLoading ? (
