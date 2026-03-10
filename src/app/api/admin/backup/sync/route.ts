@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   const portNum = config.port ? parseInt(String(config.port), 10) : NaN
   const portFlag = !isNaN(portNum) && portNum > 0 && portNum <= 65535 ? ` -p ${portNum}` : ''
 
-  const sshCmd = `ssh -i ${keyPath}${portFlag} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${knownHostsPath} -o BatchMode=yes`
+  const sshCmd = `ssh -i "${keyPath}"${portFlag} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="${knownHostsPath}" -o BatchMode=yes`
 
   const result = spawnSync(
     'rsync',

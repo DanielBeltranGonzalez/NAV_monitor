@@ -38,9 +38,9 @@ fi
 cp "$DB" "$BACKUP_DIR/nav_$(date +%Y%m%d_%H%M%S).db"
 # Sync remoto si está configurado
 if [ -f /data/backup_remote.json ] && [ -f /data/ssh/nav_backup_rsa ]; then
-  HOST=$(sed -n 's/.*"host":"\([^"]*\)".*/\1/p' /data/backup_remote.json)
-  RPATH=$(sed -n 's/.*"path":"\([^"]*\)".*/\1/p' /data/backup_remote.json)
-  PORT=$(sed -n 's/.*"port":\([0-9]*\).*/\1/p' /data/backup_remote.json)
+  HOST=$(jq -r '.host // empty' /data/backup_remote.json)
+  RPATH=$(jq -r '.path // "~/nav-backups"' /data/backup_remote.json)
+  PORT=$(jq -r '.port // empty' /data/backup_remote.json)
   PORT_FLAG=$([ -n "$PORT" ] && echo "-p $PORT" || echo "")
   SSH_CMD="ssh -i /data/ssh/nav_backup_rsa $PORT_FLAG -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/data/ssh/known_hosts -o BatchMode=yes"
   [ -n "$HOST" ] && rsync -az --mkpath \
