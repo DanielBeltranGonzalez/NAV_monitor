@@ -1,6 +1,7 @@
 import bcryptjs from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import type { NextRequest } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET no está definido. Debes configurarlo en producción.')
@@ -72,7 +73,13 @@ export async function getSessionUser(
   const payload = await verifyToken(token)
   if (!payload) return null
 
-  return { id: Number(payload.sub), email: payload.email, role: payload.role }
+  const user = await prisma.user.findUnique({
+    where: { id: Number(payload.sub) },
+    select: { id: true, email: true, role: true },
+  })
+  if (!user) return null
+
+  return { id: user.id, email: user.email, role: user.role }
 }
 
 export { COOKIE_NAME }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
 import { logEvent } from '@/lib/audit'
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs'
+import { createReadStream, readFileSync, writeFileSync, unlinkSync, existsSync, statSync } from 'fs'
 import { execFileSync } from 'child_process'
 import { resolve } from 'path'
 import { tmpdir } from 'os'
@@ -71,18 +71,28 @@ export async function GET(
   if (!backupDir) return NextResponse.json({ error: 'No se encontró el directorio de backups' }, { status: 404 })
 
   const filePath = resolve(backupDir, filename)
-  let buffer: Buffer
+  let fileSize: number
   try {
-    buffer = readFileSync(filePath)
+    fileSize = statSync(filePath).size
   } catch {
     return NextResponse.json({ error: 'Backup no encontrado' }, { status: 404 })
   }
 
-  return new NextResponse(new Uint8Array(buffer), {
+  const fileStream = createReadStream(filePath)
+  const readable = new ReadableStream({
+    start(controller) {
+      fileStream.on('data', (chunk) => controller.enqueue(chunk))
+      fileStream.on('end', () => controller.close())
+      fileStream.on('error', (err) => controller.error(err))
+    },
+  })
+
+  return new NextResponse(readable, {
     status: 200,
     headers: {
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': String(fileSize),
     },
   })
 }
@@ -138,7 +148,7 @@ export async function POST(
     return NextResponse.json({ error: 'No se pudo escribir la base de datos' }, { status: 500 })
   }
 
-  await logEvent('BACKUP_RESTORED', user.email)
+  try { await logEvent('BACKUP_RESTORED', user.email) } catch { /* no crítico */ }
 
   return NextResponse.json({ ok: true })
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getSessionUser } from '@/lib/auth'
+import { logEvent } from '@/lib/audit'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
-import { spawnSync } from 'child_process'
+import { spawn } from 'child_process'
 
 function resolveSSHDir(): string {
   const dir = existsSync('/data') ? '/data/ssh' : resolve(process.cwd(), 'prisma/ssh')
@@ -25,6 +26,32 @@ interface RemoteConfig {
   port: number | null
   path: string
   lastSync: string | null
+}
+
+function runRsync(args: string[], timeoutMs: number): Promise<{ stdout: string; stderr: string; code: number | null }> {
+  return new Promise((resolve) => {
+    let stdout = ''
+    let stderr = ''
+    const child = spawn('rsync', args, { encoding: 'utf8' } as never)
+
+    child.stdout.on('data', (d: Buffer) => { stdout += d.toString() })
+    child.stderr.on('data', (d: Buffer) => { stderr += d.toString() })
+
+    const timer = setTimeout(() => {
+      child.kill()
+      resolve({ stdout, stderr: stderr + '\nTimed out', code: null })
+    }, timeoutMs)
+
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      resolve({ stdout, stderr, code })
+    })
+
+    child.on('error', (err) => {
+      clearTimeout(timer)
+      resolve({ stdout, stderr: err.message, code: null })
+    })
+  })
 }
 
 export async function POST(request: Request) {
@@ -55,7 +82,7 @@ export async function POST(request: Request) {
   }
 
   const sshDir = resolveSSHDir()
-  const keyPath = resolve(sshDir, 'nav_backup_rsa')
+  const keyPath = resolve(sshDir, 'nav_backup_ed25519')
   if (!existsSync(keyPath)) {
     return NextResponse.json(
       { ok: false, error: 'No hay clave SSH generada. Genera una clave primero.' },
@@ -78,26 +105,21 @@ export async function POST(request: Request) {
 
   const sshCmd = `ssh -i "${keyPath}"${portFlag} -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="${knownHostsPath}" -o BatchMode=yes`
 
-  const result = spawnSync(
-    'rsync',
+  const result = await runRsync(
     ['-avz', '--mkpath', '-e', sshCmd, backupDir + '/', `${config.host}:${remotePath}/`],
-    { encoding: 'utf8', timeout: 60_000 }
+    60_000
   )
 
-  if (result.error) {
-    const msg = result.error.message
-    if (msg.includes('ENOENT') || msg.includes('not found')) {
-      return NextResponse.json(
-        { ok: false, error: 'rsync no está disponible en este entorno. En Docker se instala automáticamente.' },
-        { status: 500 }
-      )
-    }
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+  if (result.stderr.includes('ENOENT') || result.stderr.includes('not found')) {
+    return NextResponse.json(
+      { ok: false, error: 'rsync no está disponible en este entorno. En Docker se instala automáticamente.' },
+      { status: 500 }
+    )
   }
 
-  if (result.status !== 0) {
+  if (result.code !== 0) {
     return NextResponse.json(
-      { ok: false, error: result.stderr || result.stdout || `rsync salió con código ${result.status}` },
+      { ok: false, error: result.stderr || result.stdout || `rsync salió con código ${result.code}` },
       { status: 500 }
     )
   }
@@ -105,19 +127,20 @@ export async function POST(request: Request) {
   // Sincronizar logs si el directorio existe
   let logsWarning: string | undefined
   if (existsSync('/data/logs')) {
-    const logsResult = spawnSync(
-      'rsync',
+    const logsResult = await runRsync(
       ['-avz', '--mkpath', '-e', sshCmd, '/data/logs/', `${config.host}:${remotePath}/logs/`],
-      { encoding: 'utf8', timeout: 30_000 }
+      30_000
     )
-    if (logsResult.error || (logsResult.status !== 0 && logsResult.status !== null)) {
-      logsWarning = `Backups sincronizados, pero falló la sync de logs: ${logsResult.stderr || logsResult.error?.message || `código ${logsResult.status}`}`
+    if (logsResult.code !== 0) {
+      logsWarning = `Backups sincronizados, pero falló la sync de logs: ${logsResult.stderr || `código ${logsResult.code}`}`
     }
   }
 
   // Actualizar lastSync
   config.lastSync = new Date().toISOString()
   writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
+
+  await logEvent('BACKUP_SYNC', user.email)
 
   return NextResponse.json({ ok: true, output: result.stdout, warning: logsWarning })
 }

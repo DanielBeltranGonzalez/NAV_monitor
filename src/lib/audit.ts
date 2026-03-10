@@ -9,6 +9,7 @@ export type AuditEvent =
   | 'ROLE_CHANGED'
   | 'BACKUP_DOWNLOADED'
   | 'BACKUP_RESTORED'
+  | 'BACKUP_SYNC'
   | 'LOGS_DOWNLOADED'
 
 export async function logEvent(
@@ -30,5 +31,6 @@ export const EVENT_LABELS: Record<AuditEvent, string> = {
   ROLE_CHANGED: 'Cambio de rol',
   BACKUP_DOWNLOADED: 'Descarga de backup',
   BACKUP_RESTORED: 'Restauración de backup',
+  BACKUP_SYNC: 'Sincronización remota',
   LOGS_DOWNLOADED: 'Descarga de logs',
 }

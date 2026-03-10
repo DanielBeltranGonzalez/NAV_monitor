@@ -26,6 +26,7 @@ export default function AdminLogsPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const fetchLogs = useCallback(async () => {
+    setLoading(true)
     try {
       const res = await fetch("/api/admin/logs")
       if (!res.ok) throw new Error("Error al cargar logs")
@@ -132,7 +133,7 @@ export default function AdminLogsPage() {
                 <p className="text-slate-500">El fichero de log está vacío.</p>
               ) : (
                 data.lines.map((line, i) => (
-                  <div key={`${i}-${line.slice(0, 20)}`} className="text-slate-300 whitespace-pre-wrap break-all hover:bg-slate-900 px-1 -mx-1 rounded">
+                  <div key={i} className="text-slate-300 whitespace-pre-wrap break-all hover:bg-slate-900 px-1 -mx-1 rounded">
                     {line}
                   </div>
                 ))

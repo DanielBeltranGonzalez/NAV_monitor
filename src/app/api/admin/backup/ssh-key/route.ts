@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   if (user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const sshDir = resolveSSHDir()
-  const pubKeyPath = resolve(sshDir, 'nav_backup_rsa.pub')
+  const pubKeyPath = resolve(sshDir, 'nav_backup_ed25519.pub')
 
   if (!existsSync(pubKeyPath)) {
     return NextResponse.json({ publicKey: null })
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   if (user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const sshDir = resolveSSHDir()
-  const keyPath = resolve(sshDir, 'nav_backup_rsa')
+  const keyPath = resolve(sshDir, 'nav_backup_ed25519')
 
   // Eliminar claves existentes para evitar prompt interactivo de sobreescritura
   try { unlinkSync(keyPath) } catch { /* no existía */ }

@@ -159,7 +159,7 @@ export function NavSidebar({ isAdmin }: NavSidebarProps) {
       </div>
       <div className="p-4 border-t border-slate-700">
         <div className="text-slate-500 text-xs space-y-0.5">
-          <p>v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+          <p>v{process.env.NEXT_PUBLIC_APP_VERSION ?? '—'}</p>
           <p>© tacombel@gmail.com</p>
         </div>
       </div>

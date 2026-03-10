@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 echo "Aplicando migraciones de base de datos..."
@@ -11,6 +11,13 @@ BACKUP_KEEP_COPIES=${BACKUP_KEEP_COPIES:-7}
 mkdir -p /data/backups && chown nextjs:nodejs /data/backups
 mkdir -p /data/ssh && chmod 700 /data/ssh && chown nextjs:nodejs /data/ssh
 
+# Migración de nombre de clave: nav_backup_rsa → nav_backup_ed25519
+if [ -f /data/ssh/nav_backup_rsa ] && [ ! -f /data/ssh/nav_backup_ed25519 ]; then
+  mv /data/ssh/nav_backup_rsa /data/ssh/nav_backup_ed25519
+  [ -f /data/ssh/nav_backup_rsa.pub ] && mv /data/ssh/nav_backup_rsa.pub /data/ssh/nav_backup_ed25519.pub
+  echo "Clave SSH renombrada: nav_backup_rsa → nav_backup_ed25519"
+fi
+
 # Logs del servidor
 mkdir -p /data/logs && chown nextjs:nodejs /data/logs
 LOG_FILE=/data/logs/nav.log
@@ -22,6 +29,9 @@ if [ -f "$LOG_FILE" ]; then
     echo "Log rotado (superó 10 MB)"
   fi
 fi
+
+# Guardar número de copias para que el script de backup lo lea
+echo "$BACKUP_KEEP_COPIES" > /data/backup_keep_copies
 
 if command -v crond >/dev/null 2>&1 && [ -w /etc/crontabs ]; then
   # Script de backup con detección de cambios (en /data para persistir entre reinicios)
@@ -36,13 +46,16 @@ if [ -n "$last" ] && [ "$(sha256sum "$last" | awk '{print $1}')" = "$current" ];
   exit 0
 fi
 cp "$DB" "$BACKUP_DIR/nav_$(date +%Y%m%d_%H%M%S).db"
+# Retención: eliminar copias antiguas
+KEEP=$(cat /data/backup_keep_copies 2>/dev/null || echo 7)
+ls -1t "$BACKUP_DIR"/nav_*.db 2>/dev/null | tail -n "+$((KEEP+1))" | xargs rm -f
 # Sync remoto si está configurado
-if [ -f /data/backup_remote.json ] && [ -f /data/ssh/nav_backup_rsa ]; then
+if [ -f /data/backup_remote.json ] && [ -f /data/ssh/nav_backup_ed25519 ]; then
   HOST=$(jq -r '.host // empty' /data/backup_remote.json)
   RPATH=$(jq -r '.path // "~/nav-backups"' /data/backup_remote.json)
   PORT=$(jq -r '.port // empty' /data/backup_remote.json)
   PORT_FLAG=$([ -n "$PORT" ] && echo "-p $PORT" || echo "")
-  SSH_CMD="ssh -i /data/ssh/nav_backup_rsa $PORT_FLAG -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/data/ssh/known_hosts -o BatchMode=yes"
+  SSH_CMD="ssh -i /data/ssh/nav_backup_ed25519 $PORT_FLAG -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/data/ssh/known_hosts -o BatchMode=yes"
   [ -n "$HOST" ] && rsync -az --mkpath \
     -e "$SSH_CMD" \
     /data/backups/ "${HOST}:${RPATH:-~/nav-backups}/" || true
@@ -54,7 +67,7 @@ fi
 SCRIPT
   chmod +x /data/nav-backup.sh
 
-  echo "0 2 * * * /data/nav-backup.sh && ls -t /data/backups/nav_*.db 2>/dev/null | tail -n +$((${BACKUP_KEEP_COPIES}+1)) | xargs rm -f" > /etc/crontabs/root
+  echo "0 2 * * * /data/nav-backup.sh" > /etc/crontabs/root
   crond -b
   echo "Backup automático programado (02:00 diario, retención ${BACKUP_KEEP_COPIES} copias, solo si hay cambios)"
 else
@@ -62,8 +75,5 @@ else
 fi
 
 echo "Iniciando NAV Monitor..."
-# Pipe nombrado para capturar logs a fichero y mantener stdout (docker logs)
-trap 'rm -f /tmp/logpipe' EXIT
-mkfifo /tmp/logpipe
-tee -a "$LOG_FILE" < /tmp/logpipe &
-exec su-exec nextjs npm start > /tmp/logpipe 2>&1
+# Process substitution: sin FIFO, sin race condition; bash requerido
+exec su-exec nextjs npm start > >(tee -a "$LOG_FILE") 2>&1

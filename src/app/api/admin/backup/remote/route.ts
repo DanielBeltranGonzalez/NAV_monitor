@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
   const rawPath = typeof body.path === 'string' ? body.path.trim() : ''
   const remotePath = rawPath || '~/nav-backups'
-  if (!/^[\w.~\-/]+$/.test(remotePath)) {
+  if (remotePath.includes('..') || !/^[\w.~\-/]+$/.test(remotePath)) {
     return NextResponse.json({ error: 'Ruta remota inválida' }, { status: 400 })
   }
 
