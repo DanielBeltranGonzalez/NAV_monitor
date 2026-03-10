@@ -572,7 +572,7 @@ export default function AdminBackupPage() {
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
                   <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Configurado:</span>
                   <code className="text-xs text-emerald-800 dark:text-emerald-300 font-mono flex-1">
-                    {savedRemoteHost}{savedRemotePort ? `:${savedRemotePort}` : ""}
+                    {savedRemoteHost}:{savedRemotePort ?? "22"}
                   </code>
                   {!remoteDisableConfirming && (
                     <button
