@@ -571,9 +571,17 @@ export default function AdminBackupPage() {
               {savedRemoteHost && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
                   <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Configurado:</span>
-                  <code className="text-xs text-emerald-800 dark:text-emerald-300 font-mono">
+                  <code className="text-xs text-emerald-800 dark:text-emerald-300 font-mono flex-1">
                     {savedRemoteHost}{savedRemotePort ? `:${savedRemotePort}` : ""}
                   </code>
+                  {!remoteDisableConfirming && (
+                    <button
+                      onClick={() => setRemoteDisableConfirming(true)}
+                      className="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                    >
+                      Desactivar
+                    </button>
+                  )}
                 </div>
               )}
               {remoteLoading ? (
@@ -624,14 +632,6 @@ export default function AdminBackupPage() {
                     >
                       {remoteSaving ? "Guardando…" : "Guardar configuración"}
                     </button>
-                    {remoteHost.trim() && !remoteDisableConfirming && (
-                      <button
-                        onClick={() => setRemoteDisableConfirming(true)}
-                        className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                      >
-                        Desactivar
-                      </button>
-                    )}
                   </div>
                   {remoteDisableConfirming && (
                     <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-3 space-y-2">
