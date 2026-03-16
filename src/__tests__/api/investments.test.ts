@@ -30,6 +30,7 @@ jest.mock('@/lib/prisma', () => ({
     investment: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -90,6 +91,10 @@ describe('GET /api/investments', () => {
 // ── POST /api/investments ─────────────────────────────────────────────────────
 
 describe('POST /api/investments', () => {
+  beforeEach(() => {
+    ;(prisma.investment.findFirst as jest.Mock).mockResolvedValue(null)
+  })
+
   it('sin sesión → 401', async () => {
     getSessionUser.mockResolvedValueOnce(null)
     const res = await POST(req({ name: 'Fondo A', bankId: 2 })) as any
@@ -165,11 +170,24 @@ describe('POST /api/investments', () => {
       expect.objectContaining({ data: expect.objectContaining({ comment: 'X'.repeat(1000) }) })
     )
   })
+
+  it('nombre duplicado en mismo banco → 409', async () => {
+    ;(prisma.bank.findUnique as jest.Mock).mockResolvedValue({ id: 2, userId: 1 })
+    ;(prisma.investment.findFirst as jest.Mock).mockResolvedValue(fakeInvestment)
+
+    const res = await POST(req({ name: 'Fondo A', bankId: 2 })) as any
+    expect(res.status).toBe(409)
+    expect(await res.json()).toMatchObject({ error: expect.stringContaining('Ya existe') })
+  })
 })
 
 // ── PATCH /api/investments/[id] ───────────────────────────────────────────────
 
 describe('PATCH /api/investments/[id]', () => {
+  beforeEach(() => {
+    ;(prisma.investment.findFirst as jest.Mock).mockResolvedValue(null)
+  })
+
   it('sin sesión → 401', async () => {
     getSessionUser.mockResolvedValueOnce(null)
     const res = await PATCH(patchReq({ name: 'X' }), { params: fakeParams('1') }) as any
@@ -263,6 +281,14 @@ describe('PATCH /api/investments/[id]', () => {
     expect(prisma.investment.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ comment: 'X'.repeat(1000) }) })
     )
+  })
+
+  it('nombre duplicado al editar → 409', async () => {
+    ;(prisma.investment.findUnique as jest.Mock).mockResolvedValue(fakeInvestment)
+    ;(prisma.investment.findFirst as jest.Mock).mockResolvedValue({ ...fakeInvestment, id: 99 })
+
+    const res = await PATCH(patchReq({ name: 'Fondo A' }), { params: fakeParams('1') }) as any
+    expect(res.status).toBe(409)
   })
 })
 

@@ -44,6 +44,18 @@ export async function PATCH(
   if (!investment) return NextResponse.json({ error: 'Investment not found' }, { status: 404 })
   if (investment.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const effectiveName = data.name ?? investment.name
+  const effectiveBankId = data.bankId ?? investment.bankId
+  const duplicate = await prisma.investment.findFirst({
+    where: { name: effectiveName, bankId: effectiveBankId, userId: user.id, NOT: { id } },
+  })
+  if (duplicate) {
+    return NextResponse.json(
+      { error: 'Ya existe una inversión con ese nombre en este banco' },
+      { status: 409 }
+    )
+  }
+
   try {
     const updated = await prisma.investment.update({
       where: { id },

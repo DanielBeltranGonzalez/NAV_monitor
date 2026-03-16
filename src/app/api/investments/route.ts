@@ -45,6 +45,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Bank not found' }, { status: 404 })
   }
 
+  const existing = await prisma.investment.findFirst({
+    where: { name: trimmedName, bankId: Number(bankId), userId: user.id },
+  })
+  if (existing) {
+    return NextResponse.json(
+      { error: 'Ya existe una inversión con ese nombre en este banco' },
+      { status: 409 }
+    )
+  }
+
   const investment = await prisma.investment.create({
     data: { name: trimmedName, bankId: Number(bankId), userId: user.id, comment: trimmedComment || null },
     include: { bank: true },
